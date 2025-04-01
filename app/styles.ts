@@ -285,4 +285,54 @@ export const styles = StyleSheet.create({
     borderColor: '#dc2626',
     backgroundColor: '#fef2f2',
   },
+  recipeRevealContainer: {
+    flex: 1,
+    backgroundColor: '#f0fdf4',
+  },
+  recipeImage: {
+    width: '100%',
+    height: 300,
+  },
+  recipeContent: {
+    padding: 24,
+    alignItems: 'center',
+  },
+  recipeTitle: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#166534',
+    textAlign: 'center',
+  },
+  recipeDescription: {
+    fontSize: 16,
+    color: '#166534',
+    textAlign: 'center',
+    marginTop: 8,
+  },
+  recipeButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    paddingHorizontal: 24,
+    marginTop: 24,
+  },
+  recipeButton: {
+    paddingVertical: 16,
+    paddingHorizontal: 24,
+    borderRadius: 999,
+    flex: 1,
+    alignItems: 'center',
+  },
+  resetButton: {
+    backgroundColor: '#16a34a',
+    marginRight: 12,
+  },
+  cookButton: {
+    backgroundColor: '#166534',
+    marginLeft: 12,
+  },
+  recipeButtonText: {
+    color: 'white',
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
 });

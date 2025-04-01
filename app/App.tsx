@@ -37,6 +37,7 @@ export default function App() {
     const [isSpinning, setIsSpinning] = useState(false);
     const [showRecipe, setShowRecipe] = useState(false);
     const [recipe, setRecipe] = useState({
+        id: 0,
         title: "",
         image: "",
         description: ""

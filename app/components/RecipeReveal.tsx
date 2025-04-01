@@ -1,75 +1,62 @@
 import React from 'react';
 import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
+import { styles } from '../styles';
 
-type RecipeRevealProps = {
-    onReset: () => void;
-    recipe: {
-        title: string;
-        image: string;
-        description: string;
-    };
+type Recipe = {
+    id: number;
+    title: string;
+    image: string;
+    description: string;
 };
 
-export const RecipeReveal = ({ onReset, recipe }: RecipeRevealProps) => {
+type RecipeRevealProps = {
+    recipe: Recipe;
+    onReset: () => void;
+};
+
+export const RecipeReveal = ({ recipe, onReset }: RecipeRevealProps) => {
+    const handleCook = async () => {
+        try {
+            const response = await fetch(`http://localhost:3001/cook?id=${recipe.id}`);
+            if (!response.ok) {
+                throw new Error('Failed to start cooking');
+            }
+            const data = await response.json();
+            console.log('Cooking started:', data);
+            // You might want to show a success message or navigate to a cooking screen
+        } catch (error) {
+            console.error('Error starting cooking:', error);
+            // You might want to show an error message to the user
+        }
+    };
+
     return (
-        <View style={{ flex: 1, backgroundColor: '#f0fdf4' }}>
+        <View style={styles.recipeRevealContainer}>
             {/* Recipe Image */}
             <Image
                 source={{ uri: recipe.image }}
-                style={{ width: '100%', height: 300, resizeMode: 'cover' }}
+                style={styles.recipeImage}
+                resizeMode="cover"
             />
 
             {/* Recipe Title */}
-            <View style={{ padding: 24, alignItems: 'center' }}>
-                <Text style={{
-                    fontSize: 28,
-                    fontWeight: 'bold',
-                    color: '#166534',
-                    textAlign: 'center',
-                }}>
-                    {recipe.title}
-                </Text>
-                <Text style={{
-                    fontSize: 16,
-                    color: '#166534',
-                    textAlign: 'center',
-                    marginTop: 8,
-                }}>
-                    {recipe.description}
-                </Text>
-            </View>
-
-            {/* Buttons */}
-            <View style={{ flexDirection: 'row', justifyContent: 'space-around', paddingHorizontal: 24 }}>
-                <TouchableOpacity
-                    onPress={onReset}
-                    style={{
-                        backgroundColor: '#16a34a',
-                        paddingVertical: 16,
-                        paddingHorizontal: 24,
-                        borderRadius: 999,
-                        flex: 1,
-                        marginRight: 12,
-                        alignItems: 'center'
-                    }}
-                >
-                    <Text style={{ color: 'white', fontSize: 18, fontWeight: 'bold' }}>SPIN AGAIN</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                    onPress={() => alert('Cook mode coming soon!')}
-                    style={{
-                        backgroundColor: '#166534',
-                        paddingVertical: 16,
-                        paddingHorizontal: 24,
-                        borderRadius: 999,
-                        flex: 1,
-                        marginLeft: 12,
-                        alignItems: 'center'
-                    }}
-                >
-                    <Text style={{ color: 'white', fontSize: 18, fontWeight: 'bold' }}>COOK</Text>
-                </TouchableOpacity>
+            <View style={styles.recipeContent}>
+                <Text style={styles.recipeTitle}>{recipe.title}</Text>
+                <Text style={styles.recipeDescription}>{recipe.description}</Text>
+                <View style={styles.recipeButtons}>
+                    <TouchableOpacity
+                        style={[styles.recipeButton, styles.resetButton]}
+                        onPress={onReset}
+                    >
+                        <Text style={styles.recipeButtonText}>Try Another</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                        style={[styles.recipeButton, styles.cookButton]}
+                        onPress={handleCook}
+                    >
+                        <Text style={styles.recipeButtonText}>Cook</Text>
+                    </TouchableOpacity>
+                </View>
             </View>
         </View>
     );
