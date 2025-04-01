@@ -24,7 +24,6 @@ const { width } = Dimensions.get('window');
 
 type UserSettings = {
     useMetric: boolean;
-    minCookingTime: number;
     maxCookingTime: number;
     allergens: {
         peanuts: boolean;
@@ -81,6 +80,22 @@ export default function App() {
     const buttonOpacity = useRef(new Animated.Value(1)).current;
     const contentOpacity = useRef(new Animated.Value(1)).current;
     const contentTranslateY = useRef(new Animated.Value(0)).current;
+
+    const [showSettings, setShowSettings] = useState(false);
+    const [settings, setSettings] = useState<UserSettings>({
+        useMetric: true,
+        maxCookingTime: 60,
+        allergens: {
+            gluten: false,
+            grain: false,
+            peanut: false,
+            sesame: false,
+            soy: false,
+            sulfite: false,
+            treeNut: false,
+            wheat: false,
+        }
+    });
 
     // Increased number of vegetables significantly
     const veggieAnimations = useRef<VeggieAnimation[]>(
@@ -277,10 +292,11 @@ export default function App() {
 
         try {
             const queryParams = new URLSearchParams({
-                maxReadyTime: settings.maxReadyTime.toString(),
-                minReadyTime: settings.minReadyTime.toString(),
-                allergies: settings.allergies.join(','),
-                diet: settings.diet.join(','),
+                maxTime: settings.maxCookingTime.toString(),
+                ...Object.entries(settings.allergens)
+                    .filter(([_, value]) => value) // Only include allergens that are set to true
+                    .map(([key]) => key)
+                    .reduce((acc, key) => ({ ...acc, [key]: 'true' }), {})
             });
 
             const response = await fetch(`http://localhost:3001/spin?${queryParams}`);

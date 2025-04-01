@@ -17,12 +17,22 @@ interface SettingsProps {
     onSave: (settings: RecipeSettings) => void;
 }
 
-export interface RecipeSettings {
-    maxReadyTime: number;
-    minReadyTime: number;
-    allergies: string[];
-    diet: string[];
-}
+export type Allergens = {
+    gluten: boolean;
+    grain: boolean;
+    peanut: boolean;
+    sesame: boolean;
+    soy: boolean;
+    sulfite: boolean;
+    treeNut: boolean;
+    wheat: boolean;
+};
+
+type UserSettings = {
+    useMetric: boolean;
+    maxCookingTime: number;
+    allergens: Allergens;
+};
 
 const DIET_OPTIONS = [
     'vegetarian',
@@ -101,81 +111,49 @@ export const Settings: React.FC<SettingsProps> = ({ visible, onClose, onSave }) 
                         </TouchableOpacity>
                     </View>
 
-                    <ScrollView style={styles.scrollView}>
-                        <View style={styles.section}>
-                            <Text style={styles.sectionTitle}>Cooking Time</Text>
-                            <View style={styles.timeInputs}>
-                                <View style={styles.timeInput}>
-                                    <Text>Min Time (min)</Text>
-                                    <TouchableOpacity
-                                        style={styles.timeButton}
-                                        onPress={() => setSettings(prev => ({
-                                            ...prev,
-                                            minReadyTime: Math.max(5, prev.minReadyTime - 5),
-                                        }))}
-                                    >
-                                        <Ionicons name="remove" size={20} color="#000" />
-                                    </TouchableOpacity>
-                                    <Text style={styles.timeValue}>{settings.minReadyTime}</Text>
-                                    <TouchableOpacity
-                                        style={styles.timeButton}
-                                        onPress={() => setSettings(prev => ({
-                                            ...prev,
-                                            minReadyTime: Math.min(prev.maxReadyTime - 5, prev.minReadyTime + 5),
-                                        }))}
-                                    >
-                                        <Ionicons name="add" size={20} color="#000" />
-                                    </TouchableOpacity>
-                                </View>
-                                <View style={styles.timeInput}>
-                                    <Text>Max Time (min)</Text>
-                                    <TouchableOpacity
-                                        style={styles.timeButton}
-                                        onPress={() => setSettings(prev => ({
-                                            ...prev,
-                                            maxReadyTime: Math.max(prev.minReadyTime + 5, prev.maxReadyTime - 5),
-                                        }))}
-                                    >
-                                        <Ionicons name="remove" size={20} color="#000" />
-                                    </TouchableOpacity>
-                                    <Text style={styles.timeValue}>{settings.maxReadyTime}</Text>
-                                    <TouchableOpacity
-                                        style={styles.timeButton}
-                                        onPress={() => setSettings(prev => ({
-                                            ...prev,
-                                            maxReadyTime: Math.min(180, prev.maxReadyTime + 5),
-                                        }))}
-                                    >
-                                        <Ionicons name="add" size={20} color="#000" />
-                                    </TouchableOpacity>
-                                </View>
-                            </View>
+
+                {/* Cooking Time Section */}
+                <View style={styles.settingsSection}>
+                    <Text style={styles.settingsTitle}>Maximum Cooking Time</Text>
+                    <View style={styles.settingRow}>
+                        <Text style={styles.settingLabel}>Time (minutes)</Text>
+                        <View style={styles.numberInput}>
+                            <TouchableOpacity 
+                                onPress={() => onUpdateSettings({ ...settings, maxCookingTime: Math.max(5, settings.maxCookingTime - 5) })}
+                                style={styles.numberButton}
+                            >
+                                <Text style={styles.numberButtonText}>-</Text>
+                            </TouchableOpacity>
+                            <Text style={styles.numberValue}>{settings.maxCookingTime}</Text>
+                            <TouchableOpacity 
+                                onPress={() => onUpdateSettings({ ...settings, maxCookingTime: settings.maxCookingTime + 5 })}
+                                style={styles.numberButton}
+                            >
+                                <Text style={styles.numberButtonText}>+</Text>
+                            </TouchableOpacity>
                         </View>
 
-                        <View style={styles.section}>
-                            <Text style={styles.sectionTitle}>Dietary Preferences</Text>
-                            {DIET_OPTIONS.map(diet => (
-                                <View key={diet} style={styles.option}>
-                                    <Text style={styles.optionText}>{diet}</Text>
-                                    <Switch
-                                        value={settings.diet.includes(diet)}
-                                        onValueChange={() => toggleDiet(diet)}
-                                    />
-                                </View>
-                            ))}
-                        </View>
-
-                        <View style={styles.section}>
-                            <Text style={styles.sectionTitle}>Allergies</Text>
-                            {ALLERGY_OPTIONS.map(allergy => (
-                                <View key={allergy} style={styles.option}>
-                                    <Text style={styles.optionText}>{allergy}</Text>
-                                    <Switch
-                                        value={settings.allergies.includes(allergy)}
-                                        onValueChange={() => toggleAllergy(allergy)}
-                                    />
-                                </View>
-                            ))}
+                {/* Allergens Section */}
+                <View style={styles.settingsSection}>
+                    <Text style={styles.settingsTitle}>Intolerances</Text>
+                    {Object.entries(settings.allergens).map(([key, value]) => (
+                        <View key={key} style={styles.settingRow}>
+                            <Text style={styles.settingLabel}>
+                                {key === 'treeNut' ? 'Tree Nut' : key.charAt(0).toUpperCase() + key.slice(1)}
+                            </Text>
+                            <TouchableOpacity
+                                onPress={() => updateAllergen(key as keyof Allergens)}
+                                style={[
+                                    styles.allergenButton,
+                                    value ? styles.allergenButtonExclude : styles.allergenButtonInclude
+                                ]}
+                            >
+                                <MaterialCommunityIcons
+                                    name={value ? 'close' : 'check'}
+                                    size={24}
+                                    color={value ? '#dc2626' : '#16a34a'}
+                                />
+                            </TouchableOpacity>
                         </View>
                     </ScrollView>
 
