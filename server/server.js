@@ -10,9 +10,6 @@ app.use(cors()); // 👈 Add this line!
 
 const PORT = process.env.PORT || 3001;
 const SPOONACULAR_API_KEY = process.env.SPOONACULAR_API_KEY;
-const CATEGORIES = ['vegetarian', 'quick', 'comfort']; // or any tags you want
-
-const RECIPE_CACHE_FILE = './data/todayRecipes.json';
 
 app.use(express.json());
 

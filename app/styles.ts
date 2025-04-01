@@ -262,4 +262,27 @@ export const styles = StyleSheet.create({
     color: '#15803d',
     lineHeight: 20,
   },
+  allergenLabelContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  allergenIcon: {
+    marginRight: 8,
+  },
+  allergenButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+  },
+  allergenButtonInclude: {
+    borderColor: '#16a34a',
+    backgroundColor: '#f0fdf4',
+  },
+  allergenButtonExclude: {
+    borderColor: '#dc2626',
+    backgroundColor: '#fef2f2',
+  },
 });

@@ -1,21 +1,17 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, ScrollView, Switch, StyleSheet } from 'react-native';
-import { Feather } from '@expo/vector-icons';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { styles } from '../styles';
 
-type Allergens = {
-    nuts: boolean;
+export type Allergens = {
+    peanuts: boolean;
     soy: boolean;
     gluten: boolean;
-    dairy: boolean;
-    shellfish: boolean;
-    eggs: boolean;
-    fish: boolean;
+    treeNuts: boolean;
     sesame: boolean;
     mustard: boolean;
     celery: boolean;
     lupin: boolean;
-    molluscs: boolean;
     sulfites: boolean;
 };
 
@@ -50,7 +46,7 @@ export const Settings = ({ settings, onUpdateSettings, onClose }: SettingsProps)
                     onPress={onClose}
                     style={styles.backButton}
                 >
-                    <Feather name="arrow-left" size={24} color="#16a34a" />
+                    <MaterialCommunityIcons name="arrow-left" size={24} color="#16a34a" />
                 </TouchableOpacity>
                 <Text style={styles.settingsHeaderTitle}>Settings</Text>
             </View>
@@ -116,14 +112,21 @@ export const Settings = ({ settings, onUpdateSettings, onClose }: SettingsProps)
                     {Object.entries(settings.allergens).map(([key, value]) => (
                         <View key={key} style={styles.settingRow}>
                             <Text style={styles.settingLabel}>
-                                {key.charAt(0).toUpperCase() + key.slice(1)}
+                                {key === 'treeNuts' ? 'Tree Nuts' : key.charAt(0).toUpperCase() + key.slice(1)}
                             </Text>
-                            <Switch
-                                value={value}
-                                onValueChange={() => updateAllergen(key as keyof Allergens)}
-                                trackColor={{ false: '#767577', true: '#16a34a' }}
-                                thumbColor={value ? '#166534' : '#f4f3f4'}
-                            />
+                            <TouchableOpacity
+                                onPress={() => updateAllergen(key as keyof Allergens)}
+                                style={[
+                                    styles.allergenButton,
+                                    value ? styles.allergenButtonExclude : styles.allergenButtonInclude
+                                ]}
+                            >
+                                <MaterialCommunityIcons
+                                    name={value ? 'close' : 'check'}
+                                    size={24}
+                                    color={value ? '#dc2626' : '#16a34a'}
+                                />
+                            </TouchableOpacity>
                         </View>
                     ))}
                 </View>

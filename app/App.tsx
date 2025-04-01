@@ -13,27 +13,10 @@ import { Feather } from '@expo/vector-icons';
 import { styles } from './styles';
 import { SpinachLogo } from './components/Logo';
 import { RecipeReveal } from './components/RecipeReveal';
-import { Settings } from './components/Settings';
+import { Settings, Allergens } from './components/Settings';
 
 // Get screen dimensions
 const { width } = Dimensions.get('window');
-
-// Add new types
-type Allergens = {
-    nuts: boolean;
-    soy: boolean;
-    gluten: boolean;
-    dairy: boolean;
-    shellfish: boolean;
-    eggs: boolean;
-    fish: boolean;
-    sesame: boolean;
-    mustard: boolean;
-    celery: boolean;
-    lupin: boolean;
-    molluscs: boolean;
-    sulfites: boolean;
-};
 
 type UserSettings = {
     useMetric: boolean;
@@ -73,18 +56,14 @@ export default function App() {
         minCookingTime: 15,
         maxCookingTime: 60,
         allergens: {
-            nuts: false,
+            peanuts: false,
+            treeNuts: false,
             soy: false,
             gluten: false,
-            dairy: false,
-            shellfish: false,
-            eggs: false,
-            fish: false,
             sesame: false,
             mustard: false,
             celery: false,
             lupin: false,
-            molluscs: false,
             sulfites: false,
         }
     });
@@ -220,144 +199,77 @@ export default function App() {
     };
 
     const handleSpin = async () => {
+        if (isSpinning) return;
         setIsSpinning(true);
-        
-        // Reset animation values
-        outerCircleOpacity.setValue(0.7);
-        innerCircleOpacity.setValue(1);
-        outerCircleRotate.setValue(0);
-        innerCircleRotate.setValue(0);
-        buttonScale.setValue(1);
-        buttonOpacity.setValue(1);
-        contentOpacity.setValue(1);
-        contentTranslateY.setValue(0);
+        setShowRecipe(false);
+        setShowSettings(false);
 
-        const totalAnimationDuration = 3000;
-
-        // Hide content and scale up button
-        Animated.parallel([
-            Animated.timing(contentOpacity, {
-                toValue: 0,
-                duration: 500,
-                useNativeDriver: true,
-            }),
-            Animated.timing(contentTranslateY, {
-                toValue: -50,
-                duration: 500,
-                useNativeDriver: true,
-            }),
-            Animated.spring(buttonScale, {
-                toValue: 1.8,
-                friction: 3,
-                tension: 40,
-                useNativeDriver: true,
-            }),
-        ]).start();
-
-        // Create falling vegetables animations
-        const fallingVeggieAnimations = veggieAnimations.map((animation: VeggieAnimation, index: number) => createVeggieAnimation(index));
-
-        // Start the vegetable animations
-        Animated.parallel(fallingVeggieAnimations).start();
-
-        // Run main animations (accelerating spin and intensifying strobe)
+        // Start animations
         Animated.parallel([
             Animated.timing(spinAnim, {
                 toValue: 1,
-                duration: totalAnimationDuration,
-                easing: Easing.bezier(0.2, 0, 0.8, 0.2),
+                duration: 2000,
+                easing: Easing.out(Easing.cubic),
                 useNativeDriver: true,
             }),
-            Animated.timing(outerCircleRotate, {
-                toValue: 1,
-                duration: totalAnimationDuration,
-                easing: Easing.bezier(0.2, 0, 0.8, 0.2),
-                useNativeDriver: true,
-            }),
-            Animated.timing(innerCircleRotate, {
-                toValue: 1,
-                duration: totalAnimationDuration,
-                easing: Easing.bezier(0.2, 0, 0.8, 0.2),
-                useNativeDriver: true,
-            }),
-        ]).start(async () => {
-            try {
-                // Fetch recipe from server
-                const response = await fetch('http://localhost:3001/spin');
-                const data = await response.json();
-                setRecipe(data);
-            } catch (error) {
-                console.error('Error fetching recipe:', error);
-                // Fallback to default recipe if API call fails
-                setRecipe({
-                    title: "Spinach & Mushroom Risotto",
-                    image: "https://images.unsplash.com/photo-1637361874063-e5e415d7bcf7?q=80&w=1974&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-                    description: "A delicious vegan risotto packed with fresh spinach and mushrooms."
-                });
+            ...veggieAnimations.flatMap(animation => [
+                Animated.timing(animation.translateY, {
+                    toValue: 1,
+                    duration: 2000,
+                    easing: Easing.out(Easing.cubic),
+                    useNativeDriver: true,
+                }),
+                Animated.timing(animation.translateX, {
+                    toValue: 1,
+                    duration: 2000,
+                    easing: Easing.out(Easing.cubic),
+                    useNativeDriver: true,
+                }),
+                Animated.timing(animation.rotate, {
+                    toValue: 1,
+                    duration: 2000,
+                    easing: Easing.out(Easing.cubic),
+                    useNativeDriver: true,
+                }),
+                Animated.timing(animation.opacity, {
+                    toValue: 1,
+                    duration: 2000,
+                    easing: Easing.out(Easing.cubic),
+                    useNativeDriver: true,
+                }),
+                Animated.timing(animation.scale, {
+                    toValue: 1,
+                    duration: 2000,
+                    easing: Easing.out(Easing.cubic),
+                    useNativeDriver: true,
+                })
+            ])
+        ]).start();
+
+        try {
+            // Prepare query parameters
+            const queryParams = new URLSearchParams({
+                minTime: settings.minCookingTime.toString(),
+                maxTime: settings.maxCookingTime.toString(),
+                ...Object.entries(settings.allergens)
+                    .filter(([_, value]) => value) // Only include allergens that are set to true
+                    .map(([key]) => key)
+                    .reduce((acc, key) => ({ ...acc, [key]: 'true' }), {})
+            });
+
+            const response = await fetch(`http://localhost:3001/spin?${queryParams}`);
+            if (!response.ok) {
+                throw new Error('Failed to fetch recipe');
             }
-
-            // Final dramatic fade out
-            Animated.parallel([
-                Animated.timing(buttonOpacity, {
-                    toValue: 0,
-                    duration: 300,
-                    easing: Easing.out(Easing.exp),
-                    useNativeDriver: true,
-                }),
-                Animated.timing(buttonScale, {
-                    toValue: 2.2,
-                    duration: 300,
-                    easing: Easing.out(Easing.exp),
-                    useNativeDriver: true,
-                }),
-            ]).start(() => {
-                spinAnim.setValue(0);
-                setIsSpinning(false);
-                setShowRecipe(true);
-            });
-        });
-
-        // Strobe opacity animation that follows the acceleration
-        const createStrobeOpacity = () => {
-            const numPulses = 15; // More pulses for smoother effect
-            return Array(numPulses).fill(0).map((_, i) => {
-                const progress = i / (numPulses - 1);
-                const duration = totalAnimationDuration / numPulses;
-                const delay = progress * (totalAnimationDuration - duration);
-                
-                return Animated.sequence([
-                    Animated.timing(outerCircleOpacity, {
-                        toValue: 0.1,
-                        duration: duration * (1 - progress * 0.7), // Gets faster
-                        delay: delay,
-                        easing: Easing.bezier(0.2, 0, 0.8, 0.2),
-                        useNativeDriver: true,
-                    }),
-                    Animated.timing(outerCircleOpacity, {
-                        toValue: 0.9,
-                        duration: duration * (1 - progress * 0.7), // Gets faster
-                        easing: Easing.bezier(0.2, 0, 0.8, 0.2),
-                        useNativeDriver: true,
-                    }),
-                    Animated.timing(innerCircleOpacity, {
-                        toValue: 0.2,
-                        duration: duration * (1 - progress * 0.7), // Gets faster
-                        delay: delay,
-                        easing: Easing.bezier(0.2, 0, 0.8, 0.2),
-                        useNativeDriver: true,
-                    }),
-                    Animated.timing(innerCircleOpacity, {
-                        toValue: 1,
-                        duration: duration * (1 - progress * 0.7), // Gets faster
-                        easing: Easing.bezier(0.2, 0, 0.8, 0.2),
-                        useNativeDriver: true,
-                    }),
-                ]);
-            });
-        };
-
-        // Start the strobe opacity animation
-        Animated.sequence(createStrobeOpacity()).start();
+            const data = await response.json();
+            setRecipe(data);
+            setShowRecipe(true);
+        } catch (error) {
+            console.error('Error fetching recipe:', error);
+            // You might want to show an error message to the user here
+        } finally {
+            setIsSpinning(false);
+        }
     };
 
     const spin = spinAnim.interpolate({
