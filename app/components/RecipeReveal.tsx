@@ -2,19 +2,26 @@ import React from 'react';
 import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
 import { styles } from '../styles';
 
-type Recipe = {
-    id: number;
-    title: string;
-    image: string;
-    description: string;
-};
+interface RecipeRevealProps {
+    recipe: {
+        id: number;
+        title: string;
+        image: string;
+        description: string;
+        readyInMinutes: number;
+        servings: number;
+        extendedIngredients: any[];
+        analyzedInstructions: { steps: any[] }[];
+    };
+    onTryAnother: () => void;
+    onStartCooking: () => void;
+}
 
-type RecipeRevealProps = {
-    recipe: Recipe;
-    onReset: () => void;
-};
-
-export const RecipeReveal = ({ recipe, onReset }: RecipeRevealProps) => {
+export const RecipeReveal: React.FC<RecipeRevealProps> = ({
+    recipe,
+    onTryAnother,
+    onStartCooking,
+}) => {
     const handleCook = async () => {
         try {
             const response = await fetch(`http://localhost:3001/cook?id=${recipe.id}`);
@@ -46,13 +53,13 @@ export const RecipeReveal = ({ recipe, onReset }: RecipeRevealProps) => {
                 <View style={styles.recipeButtons}>
                     <TouchableOpacity
                         style={[styles.recipeButton, styles.resetButton]}
-                        onPress={onReset}
+                        onPress={onTryAnother}
                     >
                         <Text style={styles.recipeButtonText}>Try Another</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
                         style={[styles.recipeButton, styles.cookButton]}
-                        onPress={handleCook}
+                        onPress={onStartCooking}
                     >
                         <Text style={styles.recipeButtonText}>Cook</Text>
                     </TouchableOpacity>

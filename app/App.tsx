@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
     SafeAreaView,
     View,
@@ -7,13 +7,17 @@ import {
     Animated,
     Easing,
     Dimensions,
+    Alert,
 } from 'react-native';
 import { Svg, Circle, Path } from 'react-native-svg';
 import { Feather } from '@expo/vector-icons';
 import { styles } from './styles';
 import { SpinachLogo } from './components/Logo';
 import { RecipeReveal } from './components/RecipeReveal';
-import { Settings, Allergens } from './components/Settings';
+import { Settings, RecipeSettings } from './components/Settings';
+import { IngredientsList } from './components/IngredientsList';
+import { CookingSteps } from './components/CookingSteps';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Get screen dimensions
 const { width } = Dimensions.get('window');
@@ -22,7 +26,17 @@ type UserSettings = {
     useMetric: boolean;
     minCookingTime: number;
     maxCookingTime: number;
-    allergens: Allergens;
+    allergens: {
+        peanuts: boolean;
+        treeNuts: boolean;
+        soy: boolean;
+        gluten: boolean;
+        sesame: boolean;
+        mustard: boolean;
+        celery: boolean;
+        lupin: boolean;
+        sulfites: boolean;
+    };
 };
 
 type VeggieAnimation = {
@@ -33,15 +47,31 @@ type VeggieAnimation = {
     scale: Animated.Value;
 };
 
+type AppState = 'landing' | 'recipe' | 'ingredients' | 'cooking';
+
 export default function App() {
     const [isSpinning, setIsSpinning] = useState(false);
     const [showRecipe, setShowRecipe] = useState(false);
+    const [currentState, setCurrentState] = useState<AppState>('landing');
     const [recipe, setRecipe] = useState({
         id: 0,
         title: "",
         image: "",
-        description: ""
+        description: "",
+        readyInMinutes: 0,
+        servings: 0,
+        extendedIngredients: [],
+        analyzedInstructions: [{ steps: [] }],
     });
+    const [settings, setSettings] = useState<RecipeSettings>({
+        maxReadyTime: 60,
+        minReadyTime: 15,
+        allergies: [],
+        diet: [],
+    });
+    const [showSettings, setShowSettings] = useState(false);
+    const [servings, setServings] = useState(4);
+
     const spinAnim = useRef(new Animated.Value(0)).current;
     const outerCircleOpacity = useRef(new Animated.Value(0.7)).current;
     const innerCircleOpacity = useRef(new Animated.Value(1)).current;
@@ -51,23 +81,6 @@ export default function App() {
     const buttonOpacity = useRef(new Animated.Value(1)).current;
     const contentOpacity = useRef(new Animated.Value(1)).current;
     const contentTranslateY = useRef(new Animated.Value(0)).current;
-    const [showSettings, setShowSettings] = useState(false);
-    const [settings, setSettings] = useState<UserSettings>({
-        useMetric: true,
-        minCookingTime: 15,
-        maxCookingTime: 60,
-        allergens: {
-            peanuts: false,
-            treeNuts: false,
-            soy: false,
-            gluten: false,
-            sesame: false,
-            mustard: false,
-            celery: false,
-            lupin: false,
-            sulfites: false,
-        }
-    });
 
     // Increased number of vegetables significantly
     const veggieAnimations = useRef<VeggieAnimation[]>(
@@ -79,6 +92,21 @@ export default function App() {
             scale: new Animated.Value(1),
         }))
     ).current;
+
+    useEffect(() => {
+        loadSettings();
+    }, []);
+
+    const loadSettings = async () => {
+        try {
+            const savedSettings = await AsyncStorage.getItem('recipeSettings');
+            if (savedSettings) {
+                setSettings(JSON.parse(savedSettings));
+            }
+        } catch (error) {
+            console.error('Error loading settings:', error);
+        }
+    };
 
     // Helper function to get a random vegetable emoji and its color
     const getVeggieEmoji = (index: number): { emoji: string; color: string } => {
@@ -153,7 +181,7 @@ export default function App() {
                 // Quick scale up at start
                 Animated.timing(veggieAnimations[index].scale, {
                     toValue: randomScale * 1.1,
-                    duration: 150, // Reduced from 200
+                    duration: 150,
                     delay: sequentialDelay,
                     easing: Easing.out(Easing.quad),
                     useNativeDriver: true,
@@ -161,14 +189,14 @@ export default function App() {
                 // Settle to normal size
                 Animated.timing(veggieAnimations[index].scale, {
                     toValue: randomScale,
-                    duration: 150, // Reduced from 200
+                    duration: 150,
                     easing: Easing.out(Easing.quad),
                     useNativeDriver: true,
                 }),
                 // Faster scale down as they fly away
                 Animated.timing(veggieAnimations[index].scale, {
                     toValue: randomScale * 0.7,
-                    duration: randomDuration - 300, // Reduced from 400
+                    duration: randomDuration - 300,
                     easing: Easing.in(Easing.quad),
                     useNativeDriver: true,
                 }),
@@ -178,20 +206,20 @@ export default function App() {
                 // Fade in quickly
                 Animated.timing(veggieAnimations[index].opacity, {
                     toValue: 1,
-                    duration: 100, // Reduced from 150
+                    duration: 100,
                     delay: sequentialDelay,
                     useNativeDriver: true,
                 }),
                 // Stay visible for shorter time
                 Animated.timing(veggieAnimations[index].opacity, {
                     toValue: 1,
-                    duration: randomDuration - 200, // Reduced from 300
+                    duration: randomDuration - 200,
                     useNativeDriver: true,
                 }),
                 // Faster fade out
                 Animated.timing(veggieAnimations[index].opacity, {
                     toValue: 0,
-                    duration: 150, // Reduced from 200
+                    duration: 150,
                     easing: Easing.in(Easing.quad),
                     useNativeDriver: true,
                 }),
@@ -248,14 +276,11 @@ export default function App() {
         ]).start();
 
         try {
-            // Prepare query parameters
             const queryParams = new URLSearchParams({
-                minTime: settings.minCookingTime.toString(),
-                maxTime: settings.maxCookingTime.toString(),
-                ...Object.entries(settings.allergens)
-                    .filter(([_, value]) => value) // Only include allergens that are set to true
-                    .map(([key]) => key)
-                    .reduce((acc, key) => ({ ...acc, [key]: 'true' }), {})
+                maxReadyTime: settings.maxReadyTime.toString(),
+                minReadyTime: settings.minReadyTime.toString(),
+                allergies: settings.allergies.join(','),
+                diet: settings.diet.join(','),
             });
 
             const response = await fetch(`http://localhost:3001/spin?${queryParams}`);
@@ -265,9 +290,10 @@ export default function App() {
             const data = await response.json();
             setRecipe(data);
             setShowRecipe(true);
+            setCurrentState('recipe');
         } catch (error) {
             console.error('Error fetching recipe:', error);
-            // You might want to show an error message to the user here
+            Alert.alert('Error', 'Failed to fetch recipe. Please try again.');
         } finally {
             setIsSpinning(false);
         }
@@ -290,6 +316,7 @@ export default function App() {
 
     const resetApp = () => {
         setShowRecipe(false);
+        setCurrentState('landing');
         // Reset all animations
         contentOpacity.setValue(1);
         contentTranslateY.setValue(0);
@@ -297,10 +324,35 @@ export default function App() {
         buttonOpacity.setValue(1);
     };
 
+    const handleStartCooking = () => {
+        setCurrentState('ingredients');
+    };
+
+    const handleStartSteps = () => {
+        setCurrentState('cooking');
+    };
+
+    const handleComplete = () => {
+        setCurrentState('landing');
+        resetApp();
+    };
+
+    const handleBackFromSteps = () => {
+        setCurrentState('ingredients');
+    };
+
+    const handleServingsChange = (newServings: number) => {
+        setServings(newServings);
+        setRecipe(prev => ({
+            ...prev,
+            servings: newServings
+        }));
+    };
+
     return (
         <SafeAreaView style={styles.container}>
             <View style={styles.mainContent}>
-                {!showRecipe && !showSettings ? (
+                {currentState === 'landing' && (
                     <>
                         <Animated.View style={{
                             opacity: contentOpacity,
@@ -409,7 +461,7 @@ export default function App() {
                             <Feather name="settings" size={24} color="#16a34a" />
                         </TouchableOpacity>
                     </>
-                ) : null}
+                )}
 
                 {/* Falling vegetables - always visible */}
                 {veggieAnimations.map((anim, index) => {
@@ -448,14 +500,42 @@ export default function App() {
                     );
                 })}
 
-                {showRecipe ? <RecipeReveal onReset={resetApp} recipe={recipe} /> : null}
-                {showSettings ? (
-                    <Settings 
-                        settings={settings} 
-                        onUpdateSettings={setSettings}
-                        onClose={() => setShowSettings(false)}
+                {currentState === 'recipe' && (
+                    <RecipeReveal
+                        recipe={recipe}
+                        onTryAnother={handleSpin}
+                        onStartCooking={handleStartCooking}
                     />
-                ) : null}
+                )}
+
+                {currentState === 'ingredients' && (
+                    <IngredientsList
+                        ingredients={recipe.extendedIngredients}
+                        servings={servings}
+                        readyInMinutes={recipe.readyInMinutes}
+                        onServingsChange={handleServingsChange}
+                        onStartSteps={handleStartSteps}
+                    />
+                )}
+
+                {currentState === 'cooking' && (
+                    <CookingSteps
+                        steps={recipe.analyzedInstructions[0].steps}
+                        onComplete={handleComplete}
+                        onBack={handleBackFromSteps}
+                    />
+                )}
+
+                {showSettings && (
+                    <Settings
+                        visible={showSettings}
+                        onClose={() => setShowSettings(false)}
+                        onSave={(newSettings) => {
+                            setSettings(newSettings);
+                            setShowSettings(false);
+                        }}
+                    />
+                )}
             </View>
         </SafeAreaView>
     );
