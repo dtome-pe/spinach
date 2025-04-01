@@ -4,20 +4,18 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { styles } from '../styles';
 
 export type Allergens = {
-    peanuts: boolean;
-    soy: boolean;
     gluten: boolean;
-    treeNuts: boolean;
+    grain: boolean;
+    peanut: boolean;
     sesame: boolean;
-    mustard: boolean;
-    celery: boolean;
-    lupin: boolean;
-    sulfites: boolean;
+    soy: boolean;
+    sulfite: boolean;
+    treeNut: boolean;
+    wheat: boolean;
 };
 
 type UserSettings = {
     useMetric: boolean;
-    minCookingTime: number;
     maxCookingTime: number;
     allergens: Allergens;
 };
@@ -67,30 +65,12 @@ export const Settings = ({ settings, onUpdateSettings, onClose }: SettingsProps)
 
                 {/* Cooking Time Section */}
                 <View style={styles.settingsSection}>
-                    <Text style={styles.settingsTitle}>Cooking Time</Text>
+                    <Text style={styles.settingsTitle}>Maximum Cooking Time</Text>
                     <View style={styles.settingRow}>
-                        <Text style={styles.settingLabel}>Minimum Time (minutes)</Text>
+                        <Text style={styles.settingLabel}>Time (minutes)</Text>
                         <View style={styles.numberInput}>
                             <TouchableOpacity 
-                                onPress={() => onUpdateSettings({ ...settings, minCookingTime: Math.max(0, settings.minCookingTime - 5) })}
-                                style={styles.numberButton}
-                            >
-                                <Text style={styles.numberButtonText}>-</Text>
-                            </TouchableOpacity>
-                            <Text style={styles.numberValue}>{settings.minCookingTime}</Text>
-                            <TouchableOpacity 
-                                onPress={() => onUpdateSettings({ ...settings, minCookingTime: Math.min(settings.maxCookingTime, settings.minCookingTime + 5) })}
-                                style={styles.numberButton}
-                            >
-                                <Text style={styles.numberButtonText}>+</Text>
-                            </TouchableOpacity>
-                        </View>
-                    </View>
-                    <View style={styles.settingRow}>
-                        <Text style={styles.settingLabel}>Maximum Time (minutes)</Text>
-                        <View style={styles.numberInput}>
-                            <TouchableOpacity 
-                                onPress={() => onUpdateSettings({ ...settings, maxCookingTime: Math.max(settings.minCookingTime, settings.maxCookingTime - 5) })}
+                                onPress={() => onUpdateSettings({ ...settings, maxCookingTime: Math.max(5, settings.maxCookingTime - 5) })}
                                 style={styles.numberButton}
                             >
                                 <Text style={styles.numberButtonText}>-</Text>
@@ -108,11 +88,11 @@ export const Settings = ({ settings, onUpdateSettings, onClose }: SettingsProps)
 
                 {/* Allergens Section */}
                 <View style={styles.settingsSection}>
-                    <Text style={styles.settingsTitle}>Allergens</Text>
+                    <Text style={styles.settingsTitle}>Intolerances</Text>
                     {Object.entries(settings.allergens).map(([key, value]) => (
                         <View key={key} style={styles.settingRow}>
                             <Text style={styles.settingLabel}>
-                                {key === 'treeNuts' ? 'Tree Nuts' : key.charAt(0).toUpperCase() + key.slice(1)}
+                                {key === 'treeNut' ? 'Tree Nut' : key.charAt(0).toUpperCase() + key.slice(1)}
                             </Text>
                             <TouchableOpacity
                                 onPress={() => updateAllergen(key as keyof Allergens)}

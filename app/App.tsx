@@ -20,7 +20,6 @@ const { width } = Dimensions.get('window');
 
 type UserSettings = {
     useMetric: boolean;
-    minCookingTime: number;
     maxCookingTime: number;
     allergens: Allergens;
 };
@@ -54,18 +53,16 @@ export default function App() {
     const [showSettings, setShowSettings] = useState(false);
     const [settings, setSettings] = useState<UserSettings>({
         useMetric: true,
-        minCookingTime: 15,
         maxCookingTime: 60,
         allergens: {
-            peanuts: false,
-            treeNuts: false,
-            soy: false,
             gluten: false,
+            grain: false,
+            peanut: false,
             sesame: false,
-            mustard: false,
-            celery: false,
-            lupin: false,
-            sulfites: false,
+            soy: false,
+            sulfite: false,
+            treeNut: false,
+            wheat: false,
         }
     });
 
@@ -250,7 +247,6 @@ export default function App() {
         try {
             // Prepare query parameters
             const queryParams = new URLSearchParams({
-                minTime: settings.minCookingTime.toString(),
                 maxTime: settings.maxCookingTime.toString(),
                 ...Object.entries(settings.allergens)
                     .filter(([_, value]) => value) // Only include allergens that are set to true
