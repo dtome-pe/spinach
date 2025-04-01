@@ -317,7 +317,7 @@ export default function App() {
                 throw new Error('Failed to fetch recipe details');
             }
             const rawRecipe = await response.json();
-            const processedRecipe = processRecipeData(rawRecipe);
+            const processedRecipe = processRecipeData(rawRecipe, settings.useMetric);
             setRecipe(processedRecipe);
             setServings(processedRecipe.servings);
             setCurrentState('ingredients');
@@ -347,7 +347,7 @@ export default function App() {
         setServings(newServings);
         setRecipe(prev => {
             if (!prev) return null;
-            return adjustServings(prev, newServings);
+            return adjustServings(prev, newServings, settings.useMetric);
         });
     };
 
@@ -512,6 +512,7 @@ export default function App() {
 
                 {currentState === 'ingredients' && recipe && (
                     <IngredientsList
+                        recipe={recipe}
                         ingredients={recipe.extendedIngredients}
                         servings={servings}
                         readyInMinutes={recipe.readyInMinutes}

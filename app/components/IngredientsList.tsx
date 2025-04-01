@@ -8,6 +8,7 @@ import {
     Share,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { decimalToFraction } from '../utils/recipeUtils';
 
 interface Ingredient {
     id: number;
@@ -15,11 +16,29 @@ interface Ingredient {
     amount: number;
     unit: string;
     original: string;
-    originalAmount: number;
-    originalUnit: string;
+    measures?: {
+        metric: {
+            amount: number;
+            unitShort: string;
+            unitLong: string;
+        };
+        us: {
+            amount: number;
+            unitShort: string;
+            unitLong: string;
+        };
+    };
+    baseAmount: number;
+    baseUnit: string;
+    baseServings: number;
+    measureSystem?: string; // track which measurement system is being used
 }
 
 interface IngredientsListProps {
+    recipe: {
+        title: string;
+        servings: number;
+    };
     ingredients: Ingredient[];
     servings: number;
     readyInMinutes: number;
@@ -28,6 +47,7 @@ interface IngredientsListProps {
 }
 
 export const IngredientsList: React.FC<IngredientsListProps> = ({
+    recipe,
     ingredients,
     servings,
     readyInMinutes,
@@ -56,30 +76,57 @@ export const IngredientsList: React.FC<IngredientsListProps> = ({
         }
     };
 
+    const formatAmount = (ingredient: Ingredient) => {
+        const amount = ingredient.amount;
+        const unit = ingredient.unit;
+        
+        // For metric units (g, ml, l, kg) or US volume units (cups, oz, etc.)
+        const isVolumetricOrWeight = 
+            ['g', 'ml', 'l', 'kg', 'cups', 'cup', 'oz', 'ounces', 'lbs', 'tbsp', 'tsp'].includes(unit.toLowerCase());
+            
+        if (isVolumetricOrWeight) {
+            return Math.round(amount).toString();
+        }
+        
+        return decimalToFraction(amount);
+    };
+
+    // Function to format the unit for display
+    const formatUnit = (unit: string) => {
+        // Special case for empty units or units that shouldn't be displayed
+        if (!unit || unit === '' || unit.toLowerCase() === 'large' || unit.toLowerCase() === 'medium' || unit.toLowerCase() === 'small') {
+            return '';
+        }
+        return unit;
+    };
+
     const shareShoppingList = () => {
         const uncheckedIngredients = ingredients
             .filter(i => !checkedIngredients.has(i.id))
-            .map(i => `• ${i.amount} ${i.unit} ${i.name}`)
+            .map(i => {
+                const formattedAmount = formatAmount(i);
+                const formattedUnit = formatUnit(i.unit);
+                return `• ${formattedAmount}${formattedUnit ? ' ' + formattedUnit : ''} ${i.name}`;
+            })
             .join('\n');
         
-        Share.share({
-            message: `Shopping List:\n\n${uncheckedIngredients}`,
-            title: 'Shopping List',
-        });
-    };
+        const message = `${recipe.title}:
 
-    const adjustAmount = (amount: number, unit: string) => {
-        const baseAmount = amount / servings;
-        const adjustedAmount = baseAmount * servings;
+${uncheckedIngredients}
+
+Get Spinach App to start cooking delicious plant-based recipes today!`;
         
-        if (unit === 'g' || unit === 'ml') {
-            return Math.round(adjustedAmount);
-        }
-        return adjustedAmount.toFixed(1);
+        Share.share({
+            message: message,
+            title: "Spinach Shopping List"
+        });
     };
 
     return (
         <View style={styles.container}>
+            <View style={styles.titleContainer}>
+                <Text style={styles.title}>{recipe.title}</Text>
+            </View>
             <View style={styles.header}>
                 <View style={styles.servingsContainer}>
                     <TouchableOpacity
@@ -88,7 +135,10 @@ export const IngredientsList: React.FC<IngredientsListProps> = ({
                     >
                         <Ionicons name="remove" size={24} color="#007AFF" />
                     </TouchableOpacity>
-                    <Text style={styles.servingsText}>{servings} servings</Text>
+                    <View style={styles.servingsTextContainer}>
+                        <Ionicons name="people" size={24} color="#333" />
+                        <Text style={styles.servingsText}>{servings}</Text>
+                    </View>
                     <TouchableOpacity
                         style={styles.servingsButton}
                         onPress={() => onServingsChange(servings + 1)}
@@ -127,16 +177,19 @@ export const IngredientsList: React.FC<IngredientsListProps> = ({
                         ]}
                         onPress={() => toggleIngredient(ingredient.id)}
                     >
-                        <View style={styles.ingredientCheckbox}>
+                        <View style={[
+                            styles.ingredientCheckbox,
+                            checkedIngredients.has(ingredient.id) && styles.checkedIngredientCheckbox
+                        ]}>
                             {checkedIngredients.has(ingredient.id) && (
-                                <Ionicons name="checkmark" size={20} color="#fff" />
+                                <Ionicons name="checkmark" size={20} color="#999" />
                             )}
                         </View>
                         <Text style={[
                             styles.ingredientText,
                             checkedIngredients.has(ingredient.id) && styles.checkedIngredientText
                         ]}>
-                            {adjustAmount(ingredient.amount, ingredient.unit)} {ingredient.unit} {ingredient.name}
+                            {formatAmount(ingredient)}{formatUnit(ingredient.unit) ? ' ' + formatUnit(ingredient.unit) : ''} {ingredient.name}
                         </Text>
                     </TouchableOpacity>
                 ))}
@@ -157,6 +210,16 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: '#fff',
     },
+    titleContainer: {
+        padding: 20,
+        borderBottomWidth: 1,
+        borderBottomColor: '#eee',
+    },
+    title: {
+        fontSize: 24,
+        fontWeight: 'bold',
+        color: '#333',
+    },
     header: {
         flexDirection: 'row',
         justifyContent: 'space-between',
@@ -172,10 +235,15 @@ const styles = StyleSheet.create({
     servingsButton: {
         padding: 8,
     },
+    servingsTextContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginHorizontal: 16,
+    },
     servingsText: {
         fontSize: 18,
         fontWeight: '600',
-        marginHorizontal: 16,
+        marginLeft: 8,
     },
     timeContainer: {
         flexDirection: 'row',
@@ -225,6 +293,10 @@ const styles = StyleSheet.create({
         marginRight: 12,
         justifyContent: 'center',
         alignItems: 'center',
+    },
+    checkedIngredientCheckbox: {
+        backgroundColor: '#f8f8f8',
+        borderColor: '#999',
     },
     ingredientText: {
         fontSize: 16,

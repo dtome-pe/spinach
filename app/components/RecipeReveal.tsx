@@ -5,7 +5,6 @@ import {
     StyleSheet,
     Image,
     TouchableOpacity,
-    ScrollView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -33,10 +32,6 @@ export const RecipeReveal: React.FC<RecipeRevealProps> = ({
             <Image source={{ uri: recipe.image }} style={styles.image} />
             <View style={styles.content}>
                 <Text style={styles.title}>{recipe.title}</Text>
-                <View style={styles.timeContainer}>
-                    <Ionicons name="time-outline" size={20} color="#666" />
-                    <Text style={styles.timeText}>{recipe.readyInMinutes} minutes</Text>
-                </View>
                 <View style={styles.buttonContainer}>
                     <TouchableOpacity
                         style={[styles.button, styles.tryAnotherButton]}
@@ -76,20 +71,6 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         marginBottom: 10,
         color: '#333',
-    },
-    timeContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: '#f5f5f5',
-        paddingHorizontal: 12,
-        paddingVertical: 6,
-        borderRadius: 16,
-        alignSelf: 'flex-start',
-        marginBottom: 20,
-    },
-    timeText: {
-        marginLeft: 4,
-        color: '#666',
     },
     buttonContainer: {
         flexDirection: 'row',
