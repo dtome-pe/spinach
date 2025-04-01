@@ -2,9 +2,7 @@
 import express from 'express';
 import dotenv from 'dotenv';
 import cors from 'cors';
-import fetch from 'node-fetch';
 import axios from 'axios';
-
 
 dotenv.config();
 
@@ -15,56 +13,49 @@ app.use(express.json());
 const PORT = process.env.PORT || 3001;
 const SPOONACULAR_API_KEY = process.env.SPOONACULAR_API_KEY;
 
-// Helper function to convert units to metric
-const convertToMetric = (amount, unit) => {
+const convertUnits = (amount, unit, toMetric) => {
     const conversions = {
-        'cup': 236.588, // ml
-        'tbsp': 14.7868, // ml
-        'tsp': 4.92892, // ml
-        'oz': 28.3495, // g
-        'lb': 453.592, // g
-        'fl oz': 29.5735, // ml
-        'pint': 473.176, // ml
-        'quart': 946.353, // ml
-        'gallon': 3785.41, // ml
-        'inch': 2.54, // cm
-        'foot': 30.48, // cm
-        'yard': 91.44, // cm
-        'mile': 1609.34, // m
-        'F': (f) => (f - 32) * 5/9, // °C
+        cups: { metric: 236.588, imperial: 'ml' },
+        tablespoons: { metric: 14.7868, imperial: 'ml' },
+        teaspoons: { metric: 4.92892, imperial: 'ml' },
+        ounces: { metric: 28.3495, imperial: 'g' },
+        pounds: { metric: 453.592, imperial: 'g' },
+        fluid_ounces: { metric: 29.5735, imperial: 'ml' },
+        pints: { metric: 473.176, imperial: 'ml' },
+        quarts: { metric: 946.353, imperial: 'ml' },
+        gallons: { metric: 3785.41, imperial: 'ml' },
+        inches: { metric: 2.54, imperial: 'cm' },
+        feet: { metric: 30.48, imperial: 'cm' },
+        yards: { metric: 91.44, imperial: 'cm' },
+        miles: { metric: 1609.34, imperial: 'm' },
+        fahrenheit: { metric: (f) => (f - 32) * 5/9, imperial: 'celsius' },
+        celsius: { metric: (c) => c, imperial: 'celsius' },
     };
 
-    if (!unit || !conversions[unit.toLowerCase()]) return { amount, unit };
+    if (!conversions[unit]) {
+        return { amount, unit };
+    }
 
-    const newAmount = amount * conversions[unit.toLowerCase()];
-    let newUnit = '';
+    const newAmount = toMetric ? amount * conversions[unit].metric : amount / conversions[unit].metric;
+    const newUnit = conversions[unit].imperial;
 
-app.use(express.json());
+    return { amount: Math.round(newAmount * 100) / 100, unit: newUnit };
+};
 
 // Recipe spin endpoint
 app.get('/spin', async (req, res) => {
-
-    //We extract the query params, max time and then the rest (intolerances)
     const { maxTime, ...rest } = req.query;
-
-    //We parse the maxTime to an integer
     const maxReadyTime = parseInt(maxTime) || 60;
 
     // Extract intolerances from remaining query params
     const intolerances = Object.keys(rest)
-        .filter(key => rest[key] === 'true')  // only true flags
-        .map(key => key.charAt(0).toUpperCase() + key.slice(1)) // Capitalize for Spoonacular
+        .filter(key => rest[key] === 'true')
+        .map(key => key.charAt(0).toUpperCase() + key.slice(1))
         .join(',');
-
 
     const type = "main course, side dish, salad, soup";
 
-    //We build the Spoonacular URL for a
-    const spoonacularUrl = `https://api.spoonacular.com/recipes/complexSearch`;
-
     try {
-
-        //We build the axios params for the get request to spoonacular
         const axiosParams = {
             apiKey: SPOONACULAR_API_KEY,
             maxReadyTime,
@@ -76,168 +67,151 @@ app.get('/spin', async (req, res) => {
             diet: 'vegan'
         };
 
-        //We log the final Spoonacular URL
-        /* console.log('Final Spoonacular URL:', axios.getUri({
-            url: spoonacularUrl,
+        // Log the request parameters and URL
+        console.log('\n=== SPIN REQUEST ===');
+        console.log('Query params:', req.query);
+        console.log('Processed intolerances:', intolerances);
+        console.log('Spoonacular URL:', axios.getUri({
+            url: 'https://api.spoonacular.com/recipes/complexSearch',
             params: axiosParams
-        })); */
+        }));
+        console.log('Axios params:', axiosParams);
 
-        //We make the get request to spoonacular
-        const response = await axios.get(spoonacularUrl, {
+        const searchResponse = await axios.get('https://api.spoonacular.com/recipes/complexSearch', {
             params: axiosParams
         });
 
-        //We extract the results from the response
-        const results = response.data.results;
-
-        //We check if we have results
+        const results = searchResponse.data.results;
         if (!results || results.length === 0) {
+            console.log('No recipes found');
             return res.status(404).json({ error: 'No recipes found' });
         }
 
-        //We extract the first recipe from the results
         const recipe = results[0];
+        console.log('Recipe found:', { id: recipe.id, title: recipe.title });
 
-        //We return the recipe
         res.json({
             id: recipe.id,
             title: recipe.title,
             image: recipe.image,
+            readyInMinutes: recipe.readyInMinutes
         });
-        } catch (error) {
-        console.error('Error fetching recipes:', error);
+    } catch (error) {
+        console.error('Error fetching recipes:', error.response?.data || error.message);
         return res.status(500).json({ error: 'Failed to fetch recipes' });
     }
 });
 
+// Cook endpoint - returns detailed recipe information
 app.get('/cook', async (req, res) => {
-    // Extract the recipe ID from query parameters
-    const recipeId = req.query.id;
+    const { id } = req.query;
 
-    switch(unit.toLowerCase()) {
-        case 'cup':
-        case 'tbsp':
-        case 'tsp':
-        case 'fl oz':
-        case 'pint':
-        case 'quart':
-        case 'gallon':
-            newUnit = 'ml';
-            break;
-        case 'oz':
-        case 'lb':
-            newUnit = 'g';
-            break;
-        case 'inch':
-        case 'foot':
-        case 'yard':
-        case 'mile':
-            newUnit = 'm';
-            break;
-        case 'f':
-            newUnit = '°C';
-            break;
-        default:
-            newUnit = unit;
+    if (!id) {
+        return res.status(400).json({ error: 'Recipe ID is required' });
     }
 
-    return { amount: Math.round(newAmount * 100) / 100, unit: newUnit };
-};
-
-// Recipe spin endpoint with preferences
-app.get('/spin', async (req, res) => {
     try {
-        const { maxReadyTime, minReadyTime, allergies, diet } = req.query;
-        
-        let url = `https://api.spoonacular.com/recipes/random?apiKey=${SPOONACULAR_API_KEY}&number=1`;
-        
-        if (maxReadyTime) url += `&maxReadyTime=${maxReadyTime}`;
-        if (minReadyTime) url += `&minReadyTime=${minReadyTime}`;
-        if (allergies) url += `&intolerances=${allergies}`;
-        if (diet) url += `&diet=${diet}`;
+        const axiosParams = {
+            apiKey: SPOONACULAR_API_KEY
+        };
 
-        const response = await fetch(url);
-        const data = await response.json();
+        // Log the request parameters and URL
+        console.log('\n=== COOK REQUEST ===');
+        console.log('Recipe ID:', id);
+        console.log('Spoonacular URL:', axios.getUri({
+            url: `https://api.spoonacular.com/recipes/${id}/information`,
+            params: axiosParams
+        }));
+        console.log('Axios params:', axiosParams);
 
-        if (data.recipes && data.recipes[0]) {
-            const recipe = data.recipes[0];
-            
-            // Convert ingredients to metric
-            recipe.extendedIngredients = recipe.extendedIngredients.map(ingredient => {
-                const metric = convertToMetric(ingredient.amount, ingredient.unit);
-                return {
-                    ...ingredient,
-                    amount: metric.amount,
-                    unit: metric.unit,
-                    original: `${metric.amount} ${metric.unit} ${ingredient.name}`
-                };
-            });
-
-            res.json(recipe);
-        } else {
-            res.status(404).json({ error: 'No recipe found' });
-        }
-    } catch (error) {
-        console.error('Error fetching recipe:', error);
-        res.status(500).json({ error: 'Failed to fetch recipe' });
-    }
-});
-
-// Get recipe by ID
-app.get('/recipe/:id', async (req, res) => {
-    try {
-        const { id } = req.params;
-        const url = `https://api.spoonacular.com/recipes/${id}/information?apiKey=${SPOONACULAR_API_KEY}`;
-        
-        const response = await fetch(url);
-        const recipe = await response.json();
-
-        if (recipe.id) {
-            // Convert ingredients to metric
-            recipe.extendedIngredients = recipe.extendedIngredients.map(ingredient => {
-                const metric = convertToMetric(ingredient.amount, ingredient.unit);
-                return {
-                    ...ingredient,
-                    amount: metric.amount,
-                    unit: metric.unit,
-                    original: `${metric.amount} ${metric.unit} ${ingredient.name}`
-                };
-            });
-
-            res.json(recipe);
-        } else {
-            res.status(404).json({ error: 'Recipe not found' });
-        }
-    } catch (error) {
-        console.error('Error fetching recipe:', error);
-        res.status(500).json({ error: 'Failed to fetch recipe' });
-    }
-  
-    //We build the Spoonacular URL for a recipe information
-    const spoonacularUrl = `https://api.spoonacular.com/recipes/${recipeId}/information`;
-
-    //We build the axios params for the get request to spoonacular
-    const axiosParams = {
-        apiKey: SPOONACULAR_API_KEY
-    };
-
-    try {
-        //We make the get request to spoonacular
-        const response = await axios.get(spoonacularUrl, {
+        const response = await axios.get(`https://api.spoonacular.com/recipes/${id}/information`, {
             params: axiosParams
         });
 
-        //We return the recipe  
-        res.json(response.data);
+        const recipe = response.data;
+        console.log('Recipe details fetched:', { 
+            id: recipe.id, 
+            title: recipe.title,
+            ingredientsCount: recipe.extendedIngredients?.length,
+            stepsCount: recipe.analyzedInstructions?.[0]?.steps?.length
+        });
 
+        // Process ingredients with unit conversion and ensure proper structure
+        const processedIngredients = recipe.extendedIngredients.map((ingredient, index) => {
+            const converted = convertUnits(
+                ingredient.amount,
+                ingredient.unit.toLowerCase(),
+                true
+            );
+            return {
+                id: ingredient.id || index + 1,
+                name: ingredient.name,
+                amount: converted.amount,
+                unit: converted.unit,
+                original: `${ingredient.amount} ${ingredient.unit} ${ingredient.name}`,
+            };
+        });
+
+        // Process instructions
+        const processedInstructions = recipe.analyzedInstructions.map(instruction => ({
+            ...instruction,
+            steps: instruction.steps.map((step, index) => ({
+                number: step.number || index + 1,
+                step: step.step,
+                ingredients: (step.ingredients || []).map(ingredient => {
+                    const converted = convertUnits(
+                        ingredient.amount || 0,
+                        (ingredient.unit || '').toLowerCase(),
+                        true
+                    );
+                    return {
+                        id: ingredient.id,
+                        name: ingredient.name,
+                        amount: converted.amount,
+                        unit: converted.unit,
+                    };
+                }),
+                equipment: (step.equipment || []).map(equipment => ({
+                    ...equipment,
+                    temperature: equipment.temperature ? {
+                        ...equipment.temperature,
+                        value: convertUnits(
+                            equipment.temperature.value,
+                            equipment.temperature.unit,
+                            true
+                        ).amount,
+                        unit: convertUnits(
+                            equipment.temperature.value,
+                            equipment.temperature.unit,
+                            true
+                        ).unit,
+                    } : null,
+                })),
+            })),
+        }));
+
+        console.log('Processed recipe:', {
+            ingredientsCount: processedIngredients.length,
+            stepsCount: processedInstructions[0]?.steps?.length
+        });
+
+        res.json({
+            id: recipe.id,
+            title: recipe.title,
+            image: recipe.image,
+            description: recipe.summary,
+            readyInMinutes: recipe.readyInMinutes || 30,
+            servings: recipe.servings || 4,
+            extendedIngredients: processedIngredients,
+            analyzedInstructions: processedInstructions
+        });
     } catch (error) {
-        console.error('Error fetching recipes:', error);
-        return res.status(500).json({ error: 'Failed to fetch recipes' });
+        console.error('Error fetching recipe:', error.response?.data || error.message);
+        return res.status(500).json({ error: 'Failed to fetch recipe' });
     }
-
 });
 
-//We start the server
+// Start the server
 app.listen(PORT, () => {
     console.log(`🚀 Server running on http://localhost:${PORT}`);
 });

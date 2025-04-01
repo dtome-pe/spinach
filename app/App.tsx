@@ -14,29 +14,13 @@ import { Feather } from '@expo/vector-icons';
 import { styles } from './styles';
 import { SpinachLogo } from './components/Logo';
 import { RecipeReveal } from './components/RecipeReveal';
-import { Settings, RecipeSettings } from './components/Settings';
+import { Settings, UserSettings } from './components/Settings';
 import { IngredientsList } from './components/IngredientsList';
 import { CookingSteps } from './components/CookingSteps';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Get screen dimensions
 const { width } = Dimensions.get('window');
-
-type UserSettings = {
-    useMetric: boolean;
-    maxCookingTime: number;
-    allergens: {
-        peanuts: boolean;
-        treeNuts: boolean;
-        soy: boolean;
-        gluten: boolean;
-        sesame: boolean;
-        mustard: boolean;
-        celery: boolean;
-        lupin: boolean;
-        sulfites: boolean;
-    };
-};
 
 type VeggieAnimation = {
     translateY: Animated.Value;
@@ -48,40 +32,22 @@ type VeggieAnimation = {
 
 type AppState = 'landing' | 'recipe' | 'ingredients' | 'cooking';
 
+type Recipe = {
+    id: number;
+    title: string;
+    image: string;
+    description: string;
+    readyInMinutes: number;
+    servings: number;
+    extendedIngredients: any[];
+    analyzedInstructions: { steps: any[] }[];
+};
+
 export default function App() {
     const [isSpinning, setIsSpinning] = useState(false);
     const [showRecipe, setShowRecipe] = useState(false);
     const [currentState, setCurrentState] = useState<AppState>('landing');
-    const [recipe, setRecipe] = useState({
-        id: 0,
-        title: "",
-        image: "",
-        description: "",
-        readyInMinutes: 0,
-        servings: 0,
-        extendedIngredients: [],
-        analyzedInstructions: [{ steps: [] }],
-    });
-    const [settings, setSettings] = useState<RecipeSettings>({
-        maxReadyTime: 60,
-        minReadyTime: 15,
-        allergies: [],
-        diet: [],
-    });
-    const [showSettings, setShowSettings] = useState(false);
-    const [servings, setServings] = useState(4);
-
-    const spinAnim = useRef(new Animated.Value(0)).current;
-    const outerCircleOpacity = useRef(new Animated.Value(0.7)).current;
-    const innerCircleOpacity = useRef(new Animated.Value(1)).current;
-    const outerCircleRotate = useRef(new Animated.Value(0)).current;
-    const innerCircleRotate = useRef(new Animated.Value(0)).current;
-    const buttonScale = useRef(new Animated.Value(1)).current;
-    const buttonOpacity = useRef(new Animated.Value(1)).current;
-    const contentOpacity = useRef(new Animated.Value(1)).current;
-    const contentTranslateY = useRef(new Animated.Value(0)).current;
-
-    const [showSettings, setShowSettings] = useState(false);
+    const [recipe, setRecipe] = useState<Recipe | null>(null);
     const [settings, setSettings] = useState<UserSettings>({
         useMetric: true,
         maxCookingTime: 60,
@@ -96,6 +62,18 @@ export default function App() {
             wheat: false,
         }
     });
+    const [showSettings, setShowSettings] = useState(false);
+    const [servings, setServings] = useState(4);
+
+    const spinAnim = useRef(new Animated.Value(0)).current;
+    const outerCircleOpacity = useRef(new Animated.Value(0.7)).current;
+    const innerCircleOpacity = useRef(new Animated.Value(1)).current;
+    const outerCircleRotate = useRef(new Animated.Value(0)).current;
+    const innerCircleRotate = useRef(new Animated.Value(0)).current;
+    const buttonScale = useRef(new Animated.Value(1)).current;
+    const buttonOpacity = useRef(new Animated.Value(1)).current;
+    const contentOpacity = useRef(new Animated.Value(1)).current;
+    const contentTranslateY = useRef(new Animated.Value(0)).current;
 
     // Increased number of vegetables significantly
     const veggieAnimations = useRef<VeggieAnimation[]>(
@@ -294,7 +272,7 @@ export default function App() {
             const queryParams = new URLSearchParams({
                 maxTime: settings.maxCookingTime.toString(),
                 ...Object.entries(settings.allergens)
-                    .filter(([_, value]) => value) // Only include allergens that are set to true
+                    .filter(([_, value]) => value)
                     .map(([key]) => key)
                     .reduce((acc, key) => ({ ...acc, [key]: 'true' }), {})
             });
@@ -340,8 +318,25 @@ export default function App() {
         buttonOpacity.setValue(1);
     };
 
-    const handleStartCooking = () => {
-        setCurrentState('ingredients');
+    const handleStartCooking = async () => {
+        if (!recipe) return;
+        
+        try {
+            const response = await fetch(`http://localhost:3001/cook?id=${recipe.id}`);
+            if (!response.ok) {
+                throw new Error('Failed to fetch recipe details');
+            }
+            const detailedRecipe = await response.json();
+            setRecipe(detailedRecipe);
+            setServings(detailedRecipe.servings);
+            setCurrentState('ingredients');
+        } catch (error) {
+            console.error('Error fetching recipe details:', error);
+            Alert.alert(
+                'Error',
+                'Failed to load recipe details. Please try again.'
+            );
+        }
     };
 
     const handleStartSteps = () => {
@@ -350,7 +345,7 @@ export default function App() {
 
     const handleComplete = () => {
         setCurrentState('landing');
-        resetApp();
+        setRecipe(null);
     };
 
     const handleBackFromSteps = () => {
@@ -359,10 +354,10 @@ export default function App() {
 
     const handleServingsChange = (newServings: number) => {
         setServings(newServings);
-        setRecipe(prev => ({
+        setRecipe(prev => prev ? {
             ...prev,
             servings: newServings
-        }));
+        } : null);
     };
 
     return (
@@ -516,7 +511,7 @@ export default function App() {
                     );
                 })}
 
-                {currentState === 'recipe' && (
+                {currentState === 'recipe' && recipe && (
                     <RecipeReveal
                         recipe={recipe}
                         onTryAnother={handleSpin}
@@ -524,7 +519,7 @@ export default function App() {
                     />
                 )}
 
-                {currentState === 'ingredients' && (
+                {currentState === 'ingredients' && recipe && (
                     <IngredientsList
                         ingredients={recipe.extendedIngredients}
                         servings={servings}
@@ -534,7 +529,7 @@ export default function App() {
                     />
                 )}
 
-                {currentState === 'cooking' && (
+                {currentState === 'cooking' && recipe && (
                     <CookingSteps
                         steps={recipe.analyzedInstructions[0].steps}
                         onComplete={handleComplete}

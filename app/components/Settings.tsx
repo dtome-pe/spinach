@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     StyleSheet,
     View,
@@ -11,89 +11,85 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
+export interface UserSettings {
+    useMetric: boolean;
+    maxCookingTime: number;
+    allergens: {
+        gluten: boolean;
+        grain: boolean;
+        peanut: boolean;
+        sesame: boolean;
+        soy: boolean;
+        sulfite: boolean;
+        treeNut: boolean;
+        wheat: boolean;
+    };
+}
+
 interface SettingsProps {
     visible: boolean;
     onClose: () => void;
-    onSave: (settings: RecipeSettings) => void;
+    onSave: (settings: UserSettings) => void;
 }
 
-export type Allergens = {
-    gluten: boolean;
-    grain: boolean;
-    peanut: boolean;
-    sesame: boolean;
-    soy: boolean;
-    sulfite: boolean;
-    treeNut: boolean;
-    wheat: boolean;
-};
-
-type UserSettings = {
-    useMetric: boolean;
-    maxCookingTime: number;
-    allergens: Allergens;
-};
-
-const DIET_OPTIONS = [
-    'vegetarian',
-    'vegan',
-    'gluten free',
-    'dairy free',
-    'ketogenic',
-    'paleo',
-    'whole30',
-];
-
-const ALLERGY_OPTIONS = [
-    'dairy',
-    'egg',
-    'gluten',
-    'grain',
-    'peanut',
-    'seafood',
-    'sesame',
-    'shellfish',
-    'soy',
-    'sulfite',
-    'tree nut',
-    'wheat',
-];
-
 export const Settings: React.FC<SettingsProps> = ({ visible, onClose, onSave }) => {
-    const [settings, setSettings] = useState<RecipeSettings>({
-        maxReadyTime: 60,
-        minReadyTime: 15,
-        allergies: [],
-        diet: [],
+    const [settings, setSettings] = useState<UserSettings>({
+        useMetric: true,
+        maxCookingTime: 60,
+        allergens: {
+            gluten: false,
+            grain: false,
+            peanut: false,
+            sesame: false,
+            soy: false,
+            sulfite: false,
+            treeNut: false,
+            wheat: false,
+        }
     });
 
-    const toggleDiet = (diet: string) => {
-        setSettings(prev => ({
-            ...prev,
-            diet: prev.diet.includes(diet)
-                ? prev.diet.filter(d => d !== diet)
-                : [...prev.diet, diet],
-        }));
-    };
+    useEffect(() => {
+        loadSettings();
+    }, []);
 
-    const toggleAllergy = (allergy: string) => {
-        setSettings(prev => ({
-            ...prev,
-            allergies: prev.allergies.includes(allergy)
-                ? prev.allergies.filter(a => a !== allergy)
-                : [...prev.allergies, allergy],
-        }));
+    const loadSettings = async () => {
+        try {
+            const savedSettings = await AsyncStorage.getItem('recipeSettings');
+            if (savedSettings) {
+                setSettings(JSON.parse(savedSettings));
+            }
+        } catch (error) {
+            console.error('Error loading settings:', error);
+        }
     };
 
     const handleSave = async () => {
         try {
             await AsyncStorage.setItem('recipeSettings', JSON.stringify(settings));
             onSave(settings);
-            onClose();
         } catch (error) {
             console.error('Error saving settings:', error);
         }
     };
+
+    const toggleAllergen = (allergen: keyof UserSettings['allergens']) => {
+        setSettings(prev => ({
+            ...prev,
+            allergens: {
+                ...prev.allergens,
+                [allergen]: !prev.allergens[allergen]
+            }
+        }));
+    };
+
+    const updateCookingTime = (type: 'min' | 'max', value: number) => {
+        setSettings(prev => ({
+            ...prev,
+            [`${type}CookingTime`]: Math.max(0, value)
+        }));
+    };
+
+    if (!visible) return null;
 
     return (
         <Modal
@@ -107,53 +103,67 @@ export const Settings: React.FC<SettingsProps> = ({ visible, onClose, onSave }) 
                     <View style={styles.header}>
                         <Text style={styles.title}>Recipe Preferences</Text>
                         <TouchableOpacity onPress={onClose}>
-                            <Ionicons name="close" size={24} color="#000" />
+                            <Ionicons name="close" size={24} color="#333" />
                         </TouchableOpacity>
                     </View>
 
-
-                {/* Cooking Time Section */}
-                <View style={styles.settingsSection}>
-                    <Text style={styles.settingsTitle}>Maximum Cooking Time</Text>
-                    <View style={styles.settingRow}>
-                        <Text style={styles.settingLabel}>Time (minutes)</Text>
-                        <View style={styles.numberInput}>
-                            <TouchableOpacity 
-                                onPress={() => onUpdateSettings({ ...settings, maxCookingTime: Math.max(5, settings.maxCookingTime - 5) })}
-                                style={styles.numberButton}
-                            >
-                                <Text style={styles.numberButtonText}>-</Text>
-                            </TouchableOpacity>
-                            <Text style={styles.numberValue}>{settings.maxCookingTime}</Text>
-                            <TouchableOpacity 
-                                onPress={() => onUpdateSettings({ ...settings, maxCookingTime: settings.maxCookingTime + 5 })}
-                                style={styles.numberButton}
-                            >
-                                <Text style={styles.numberButtonText}>+</Text>
-                            </TouchableOpacity>
+                    <ScrollView style={styles.scrollView}>
+                        <View style={styles.section}>
+                            <Text style={styles.sectionTitle}>Cooking Time</Text>
+                            <View style={styles.timeContainer}>
+                                <View style={styles.timeInput}>
+                                    <Text style={styles.label}>Max (minutes)</Text>
+                                    <TouchableOpacity
+                                        style={styles.timeButton}
+                                        onPress={() => setSettings(prev => ({
+                                            ...prev,
+                                            maxCookingTime: Math.max(5, prev.maxCookingTime - 5)
+                                        }))}
+                                    >
+                                        <Ionicons name="remove" size={20} color="#007AFF" />
+                                    </TouchableOpacity>
+                                    <Text style={styles.timeValue}>{settings.maxCookingTime}</Text>
+                                    <TouchableOpacity
+                                        style={styles.timeButton}
+                                        onPress={() => setSettings(prev => ({
+                                            ...prev,
+                                            maxCookingTime: Math.min(180, prev.maxCookingTime + 5)
+                                        }))}
+                                    >
+                                        <Ionicons name="add" size={20} color="#007AFF" />
+                                    </TouchableOpacity>
+                                </View>
+                            </View>
                         </View>
 
-                {/* Allergens Section */}
-                <View style={styles.settingsSection}>
-                    <Text style={styles.settingsTitle}>Intolerances</Text>
-                    {Object.entries(settings.allergens).map(([key, value]) => (
-                        <View key={key} style={styles.settingRow}>
-                            <Text style={styles.settingLabel}>
-                                {key === 'treeNut' ? 'Tree Nut' : key.charAt(0).toUpperCase() + key.slice(1)}
-                            </Text>
-                            <TouchableOpacity
-                                onPress={() => updateAllergen(key as keyof Allergens)}
-                                style={[
-                                    styles.allergenButton,
-                                    value ? styles.allergenButtonExclude : styles.allergenButtonInclude
-                                ]}
-                            >
-                                <MaterialCommunityIcons
-                                    name={value ? 'close' : 'check'}
-                                    size={24}
-                                    color={value ? '#dc2626' : '#16a34a'}
+                        <View style={styles.section}>
+                            <Text style={styles.sectionTitle}>Allergens</Text>
+                            <View style={styles.allergensGrid}>
+                                {Object.entries(settings.allergens).map(([allergen, value]) => (
+                                    <View key={allergen} style={styles.allergenItem}>
+                                        <Text style={styles.allergenLabel}>
+                                            {allergen.charAt(0).toUpperCase() + allergen.slice(1)}
+                                        </Text>
+                                        <Switch
+                                            value={value}
+                                            onValueChange={() => toggleAllergen(allergen as keyof UserSettings['allergens'])}
+                                            trackColor={{ false: '#767577', true: '#81b0ff' }}
+                                            thumbColor={value ? '#007AFF' : '#f4f3f4'}
+                                        />
+                                    </View>
+                                ))}
+                            </View>
+                        </View>
+
+                        <View style={styles.section}>
+                            <Text style={styles.sectionTitle}>Units</Text>
+                            <View style={styles.unitRow}>
+                                <Text>Use Metric System</Text>
+                                <Switch
+                                    value={settings.useMetric}
+                                    onValueChange={(value) => setSettings(prev => ({ ...prev, useMetric: value }))}
                                 />
-                            </TouchableOpacity>
+                            </View>
                         </View>
                     </ScrollView>
 
@@ -169,15 +179,15 @@ export const Settings: React.FC<SettingsProps> = ({ visible, onClose, onSave }) 
 const styles = StyleSheet.create({
     modalContainer: {
         flex: 1,
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
         justifyContent: 'flex-end',
-        backgroundColor: 'rgba(0,0,0,0.5)',
     },
     modalContent: {
         backgroundColor: '#fff',
         borderTopLeftRadius: 20,
         borderTopRightRadius: 20,
         padding: 20,
-        maxHeight: '80%',
+        maxHeight: '90%',
     },
     header: {
         flexDirection: 'row',
@@ -188,55 +198,74 @@ const styles = StyleSheet.create({
     title: {
         fontSize: 24,
         fontWeight: 'bold',
+        color: '#333',
     },
     scrollView: {
         flex: 1,
     },
     section: {
-        marginBottom: 20,
+        marginBottom: 24,
     },
     sectionTitle: {
         fontSize: 18,
         fontWeight: '600',
-        marginBottom: 10,
+        color: '#333',
+        marginBottom: 12,
     },
-    timeInputs: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        marginBottom: 20,
+    timeContainer: {
+        gap: 12,
     },
     timeInput: {
         flexDirection: 'row',
         alignItems: 'center',
+        justifyContent: 'space-between',
         backgroundColor: '#f5f5f5',
-        padding: 10,
+        padding: 12,
         borderRadius: 10,
     },
+    label: {
+        fontSize: 16,
+        color: '#666',
+        flex: 1,
+    },
     timeButton: {
-        padding: 5,
-        marginHorizontal: 10,
+        width: 36,
+        height: 36,
+        borderRadius: 18,
+        backgroundColor: '#fff',
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginHorizontal: 8,
     },
     timeValue: {
-        fontSize: 16,
+        fontSize: 18,
         fontWeight: '600',
-        minWidth: 30,
+        color: '#333',
+        minWidth: 40,
         textAlign: 'center',
     },
-    option: {
+    allergensGrid: {
         flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        paddingVertical: 10,
-        borderBottomWidth: 1,
-        borderBottomColor: '#f0f0f0',
+        flexWrap: 'wrap',
+        gap: 12,
     },
-    optionText: {
+    allergenItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        backgroundColor: '#f5f5f5',
+        padding: 12,
+        borderRadius: 10,
+        width: '48%',
+    },
+    allergenLabel: {
         fontSize: 16,
-        textTransform: 'capitalize',
+        color: '#333',
+        flex: 1,
     },
     saveButton: {
         backgroundColor: '#007AFF',
-        padding: 15,
+        padding: 16,
         borderRadius: 10,
         alignItems: 'center',
         marginTop: 20,
@@ -245,5 +274,11 @@ const styles = StyleSheet.create({
         color: '#fff',
         fontSize: 16,
         fontWeight: '600',
+    },
+    unitRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        paddingVertical: 10,
     },
 }); 
