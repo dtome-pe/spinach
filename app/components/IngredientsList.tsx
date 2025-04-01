@@ -15,6 +15,8 @@ interface Ingredient {
     amount: number;
     unit: string;
     original: string;
+    originalAmount: number;
+    originalUnit: string;
 }
 
 interface IngredientsListProps {
@@ -57,7 +59,7 @@ export const IngredientsList: React.FC<IngredientsListProps> = ({
     const shareShoppingList = () => {
         const uncheckedIngredients = ingredients
             .filter(i => !checkedIngredients.has(i.id))
-            .map(i => `• ${i.original}`)
+            .map(i => `• ${i.amount} ${i.unit} ${i.name}`)
             .join('\n');
         
         Share.share({

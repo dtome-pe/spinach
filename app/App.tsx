@@ -18,6 +18,7 @@ import { Settings, UserSettings } from './components/Settings';
 import { IngredientsList } from './components/IngredientsList';
 import { CookingSteps } from './components/CookingSteps';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Recipe, processRecipeData, adjustServings } from './utils/recipeUtils';
 
 // Get screen dimensions
 const { width } = Dimensions.get('window');
@@ -31,17 +32,6 @@ type VeggieAnimation = {
 };
 
 type AppState = 'landing' | 'recipe' | 'ingredients' | 'cooking';
-
-type Recipe = {
-    id: number;
-    title: string;
-    image: string;
-    description: string;
-    readyInMinutes: number;
-    servings: number;
-    extendedIngredients: any[];
-    analyzedInstructions: { steps: any[] }[];
-};
 
 export default function App() {
     const [isSpinning, setIsSpinning] = useState(false);
@@ -326,9 +316,10 @@ export default function App() {
             if (!response.ok) {
                 throw new Error('Failed to fetch recipe details');
             }
-            const detailedRecipe = await response.json();
-            setRecipe(detailedRecipe);
-            setServings(detailedRecipe.servings);
+            const rawRecipe = await response.json();
+            const processedRecipe = processRecipeData(rawRecipe);
+            setRecipe(processedRecipe);
+            setServings(processedRecipe.servings);
             setCurrentState('ingredients');
         } catch (error) {
             console.error('Error fetching recipe details:', error);
@@ -354,10 +345,10 @@ export default function App() {
 
     const handleServingsChange = (newServings: number) => {
         setServings(newServings);
-        setRecipe(prev => prev ? {
-            ...prev,
-            servings: newServings
-        } : null);
+        setRecipe(prev => {
+            if (!prev) return null;
+            return adjustServings(prev, newServings);
+        });
     };
 
     return (

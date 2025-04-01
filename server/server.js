@@ -3,7 +3,6 @@ import express from 'express';
 import dotenv from 'dotenv';
 import cors from 'cors';
 import axios from 'axios';
-import { convertUnits } from './utils/unitConversion.js';
 
 dotenv.config();
 
@@ -94,89 +93,13 @@ app.get('/cook', async (req, res) => {
             url: `https://api.spoonacular.com/recipes/${id}/information`,
             params: axiosParams
         }));
-        console.log('Axios params:', axiosParams);
 
         const response = await axios.get(`https://api.spoonacular.com/recipes/${id}/information`, {
             params: axiosParams
         });
 
-        const recipe = response.data;
-        console.log('Recipe details fetched:', { 
-            id: recipe.id, 
-            title: recipe.title,
-            ingredientsCount: recipe.extendedIngredients?.length,
-            stepsCount: recipe.analyzedInstructions?.[0]?.steps?.length
-        });
-
-        // Process ingredients with unit conversion and ensure proper structure
-        const processedIngredients = recipe.extendedIngredients.map((ingredient, index) => {
-            const converted = convertUnits(
-                ingredient.amount,
-                ingredient.unit.toLowerCase(),
-                true
-            );
-            return {
-                id: ingredient.id || index + 1,
-                name: ingredient.name,
-                amount: converted.amount,
-                unit: converted.unit,
-                original: `${ingredient.amount} ${ingredient.unit} ${ingredient.name}`,
-            };
-        });
-
-        // Process instructions
-        const processedInstructions = recipe.analyzedInstructions.map(instruction => ({
-            ...instruction,
-            steps: instruction.steps.map((step, index) => ({
-                number: step.number || index + 1,
-                step: step.step,
-                ingredients: (step.ingredients || []).map(ingredient => {
-                    const converted = convertUnits(
-                        ingredient.amount || 0,
-                        (ingredient.unit || '').toLowerCase(),
-                        true
-                    );
-                    return {
-                        id: ingredient.id,
-                        name: ingredient.name,
-                        amount: converted.amount,
-                        unit: converted.unit,
-                    };
-                }),
-                equipment: (step.equipment || []).map(equipment => ({
-                    ...equipment,
-                    temperature: equipment.temperature ? {
-                        ...equipment.temperature,
-                        value: convertUnits(
-                            equipment.temperature.value,
-                            equipment.temperature.unit,
-                            true
-                        ).amount,
-                        unit: convertUnits(
-                            equipment.temperature.value,
-                            equipment.temperature.unit,
-                            true
-                        ).unit,
-                    } : null,
-                })),
-            })),
-        }));
-
-        console.log('Processed recipe:', {
-            ingredientsCount: processedIngredients.length,
-            stepsCount: processedInstructions[0]?.steps?.length
-        });
-
-        res.json({
-            id: recipe.id,
-            title: recipe.title,
-            image: recipe.image,
-            description: recipe.summary,
-            readyInMinutes: recipe.readyInMinutes || 30,
-            servings: recipe.servings || 4,
-            extendedIngredients: processedIngredients,
-            analyzedInstructions: processedInstructions
-        });
+        // Return the complete recipe data without processing
+        res.json(response.data);
     } catch (error) {
         console.error('Error fetching recipe:', error.response?.data || error.message);
         return res.status(500).json({ error: 'Failed to fetch recipe' });
