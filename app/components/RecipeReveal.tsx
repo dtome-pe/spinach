@@ -31,6 +31,8 @@ export const RecipeReveal: React.FC<RecipeRevealProps> = ({
     onTryAnother,
     onStartCooking,
 }) => {
+    console.log('RecipeReveal rendering with image URL:', recipe.image);
+    
     return (
         <View style={styles.container}>
             <View style={styles.imageContainer}>
@@ -38,6 +40,21 @@ export const RecipeReveal: React.FC<RecipeRevealProps> = ({
                     source={{ uri: recipe.image }} 
                     style={styles.image}
                     resizeMode="cover"
+                    onError={(error) => {
+                        console.error('Image loading error in RecipeReveal:', error.nativeEvent);
+                        console.log('Failed to load image URL:', recipe.image);
+                        console.log('Image dimensions:', {
+                            width: SCREEN_WIDTH,
+                            height: IMAGE_HEIGHT
+                        });
+                    }}
+                    onLoad={() => {
+                        console.log('Image loaded successfully in RecipeReveal:', recipe.image);
+                        console.log('Image dimensions:', {
+                            width: SCREEN_WIDTH,
+                            height: IMAGE_HEIGHT
+                        });
+                    }}
                 />
             </View>
             <View style={styles.content}>
@@ -69,15 +86,22 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: '#fff',
+        marginTop: 160,
     },
     imageContainer: {
-        width: '100%',
+        width: SCREEN_WIDTH,
         height: IMAGE_HEIGHT,
         backgroundColor: '#f3f4f6',
+        overflow: 'hidden',
+        position: 'relative',
     },
     image: {
-        width: '100%',
-        height: '100%',
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        width: SCREEN_WIDTH,
+        height: IMAGE_HEIGHT,
+        backgroundColor: '#f3f4f6',
     },
     content: {
         flex: 1,
