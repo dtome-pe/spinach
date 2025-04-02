@@ -1,4 +1,4 @@
-import { StyleSheet, Dimensions } from 'react-native';
+import { StyleSheet, Dimensions, Platform } from 'react-native';
 
 const { width } = Dimensions.get('window');
 
@@ -112,6 +112,12 @@ export const styles = StyleSheet.create({
     padding: 10,
     backgroundColor: 'rgba(22, 163, 74, 0.1)',
     borderRadius: 20,
+    zIndex: 999,
+    ...Platform.select({
+      android: {
+        elevation: 5,
+      },
+    }),
   },
   settingsHeader: {
     flexDirection: 'row',

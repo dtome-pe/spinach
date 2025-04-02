@@ -7,6 +7,9 @@
     },
     "android": {
       "package": "com.dtomepe.recipe_app"
+    },
+    "ios": {
+      "bundleIdentifier": "com.dtomepe.recipe-app"
     }
   }
 }

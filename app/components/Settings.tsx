@@ -7,9 +7,14 @@ import {
     TouchableOpacity,
     ScrollView,
     Switch,
+    Platform,
+    Dimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+
+// Get screen dimensions
+const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 export interface UserSettings {
     useMetric: boolean;
@@ -97,75 +102,80 @@ export const Settings: React.FC<SettingsProps> = ({ visible, onClose, onSave }) 
             animationType="slide"
             transparent={true}
             onRequestClose={onClose}
+            statusBarTranslucent={true}
         >
             <View style={styles.modalContainer}>
                 <View style={styles.modalContent}>
                     <View style={styles.header}>
                         <Text style={styles.title}>Recipe Preferences</Text>
-                        <TouchableOpacity onPress={onClose}>
+                        <TouchableOpacity onPress={onClose} style={styles.closeButton}>
                             <Ionicons name="close" size={24} color="#333" />
                         </TouchableOpacity>
                     </View>
 
-                    <ScrollView style={styles.scrollView}>
-                        <View style={styles.section}>
-                            <Text style={styles.sectionTitle}>Cooking Time</Text>
-                            <View style={styles.timeContainer}>
-                                <View style={styles.timeInput}>
-                                    <Text style={styles.label}>Max (minutes)</Text>
-                                    <TouchableOpacity
-                                        style={styles.timeButton}
-                                        onPress={() => setSettings(prev => ({
-                                            ...prev,
-                                            maxCookingTime: Math.max(5, prev.maxCookingTime - 5)
-                                        }))}
-                                    >
-                                        <Ionicons name="remove" size={20} color="#007AFF" />
-                                    </TouchableOpacity>
-                                    <Text style={styles.timeValue}>{settings.maxCookingTime}</Text>
-                                    <TouchableOpacity
-                                        style={styles.timeButton}
-                                        onPress={() => setSettings(prev => ({
-                                            ...prev,
-                                            maxCookingTime: Math.min(180, prev.maxCookingTime + 5)
-                                        }))}
-                                    >
-                                        <Ionicons name="add" size={20} color="#007AFF" />
-                                    </TouchableOpacity>
+                    <View style={styles.contentContainer}>
+                        <ScrollView style={styles.scrollView}>
+                            <View style={styles.section}>
+                                <Text style={styles.sectionTitle}>Cooking Time</Text>
+                                <View style={styles.timeContainer}>
+                                    <View style={styles.timeInput}>
+                                        <Text style={styles.label}>Max (minutes)</Text>
+                                        <TouchableOpacity
+                                            style={styles.timeButton}
+                                            onPress={() => setSettings(prev => ({
+                                                ...prev,
+                                                maxCookingTime: Math.max(5, prev.maxCookingTime - 5)
+                                            }))}
+                                        >
+                                            <Ionicons name="remove" size={20} color="#007AFF" />
+                                        </TouchableOpacity>
+                                        <Text style={styles.timeValue}>{settings.maxCookingTime}</Text>
+                                        <TouchableOpacity
+                                            style={styles.timeButton}
+                                            onPress={() => setSettings(prev => ({
+                                                ...prev,
+                                                maxCookingTime: Math.min(180, prev.maxCookingTime + 5)
+                                            }))}
+                                        >
+                                            <Ionicons name="add" size={20} color="#007AFF" />
+                                        </TouchableOpacity>
+                                    </View>
                                 </View>
                             </View>
-                        </View>
 
-                        <View style={styles.section}>
-                            <Text style={styles.sectionTitle}>Allergens</Text>
-                            <View style={styles.allergensGrid}>
-                                {Object.entries(settings.allergens).map(([allergen, value]) => (
-                                    <View key={allergen} style={styles.allergenItem}>
-                                        <Text style={styles.allergenLabel}>
-                                            {allergen.charAt(0).toUpperCase() + allergen.slice(1)}
-                                        </Text>
-                                        <Switch
-                                            value={value}
-                                            onValueChange={() => toggleAllergen(allergen as keyof UserSettings['allergens'])}
-                                            trackColor={{ false: '#767577', true: '#81b0ff' }}
-                                            thumbColor={value ? '#007AFF' : '#f4f3f4'}
-                                        />
-                                    </View>
-                                ))}
+                            <View style={styles.section}>
+                                <Text style={styles.sectionTitle}>Allergens</Text>
+                                <View style={styles.allergensGrid}>
+                                    {Object.entries(settings.allergens).map(([allergen, value]) => (
+                                        <View key={allergen} style={styles.allergenItem}>
+                                            <Text style={styles.allergenLabel}>
+                                                {allergen.charAt(0).toUpperCase() + allergen.slice(1)}
+                                            </Text>
+                                            <Switch
+                                                value={value}
+                                                onValueChange={() => toggleAllergen(allergen as keyof UserSettings['allergens'])}
+                                                trackColor={{ false: '#767577', true: '#81b0ff' }}
+                                                thumbColor={value ? '#007AFF' : '#f4f3f4'}
+                                            />
+                                        </View>
+                                    ))}
+                                </View>
                             </View>
-                        </View>
 
-                        <View style={styles.section}>
-                            <Text style={styles.sectionTitle}>Units</Text>
-                            <View style={styles.unitRow}>
-                                <Text>Use Metric System</Text>
-                                <Switch
-                                    value={settings.useMetric}
-                                    onValueChange={(value) => setSettings(prev => ({ ...prev, useMetric: value }))}
-                                />
+                            <View style={styles.section}>
+                                <Text style={styles.sectionTitle}>Units</Text>
+                                <View style={styles.unitRow}>
+                                    <Text>Use Metric System</Text>
+                                    <Switch
+                                        value={settings.useMetric}
+                                        onValueChange={(value) => setSettings(prev => ({ ...prev, useMetric: value }))}
+                                        trackColor={{ false: '#767577', true: '#81b0ff' }}
+                                        thumbColor={settings.useMetric ? '#007AFF' : '#f4f3f4'}
+                                    />
+                                </View>
                             </View>
-                        </View>
-                    </ScrollView>
+                        </ScrollView>
+                    </View>
 
                     <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
                         <Text style={styles.saveButtonText}>Save Preferences</Text>
@@ -186,25 +196,33 @@ const styles = StyleSheet.create({
         backgroundColor: '#fff',
         borderTopLeftRadius: 20,
         borderTopRightRadius: 20,
-        padding: 20,
-        maxHeight: '90%',
+        height: SCREEN_HEIGHT * 0.8,
     },
     header: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: 20,
+        padding: 20,
+        borderBottomWidth: 1,
+        borderBottomColor: '#eee',
+    },
+    closeButton: {
+        padding: 5,
     },
     title: {
         fontSize: 24,
         fontWeight: 'bold',
         color: '#333',
     },
+    contentContainer: {
+        flex: 1,
+        paddingHorizontal: 20,
+    },
     scrollView: {
         flex: 1,
     },
     section: {
-        marginBottom: 24,
+        marginVertical: 15,
     },
     sectionTitle: {
         fontSize: 18,
@@ -236,6 +254,11 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         marginHorizontal: 8,
+        ...Platform.select({
+            android: {
+                elevation: 2,
+            },
+        }),
     },
     timeValue: {
         fontSize: 18,
@@ -267,18 +290,20 @@ const styles = StyleSheet.create({
         backgroundColor: '#007AFF',
         padding: 16,
         borderRadius: 10,
-        alignItems: 'center',
-        marginTop: 20,
+        margin: 20,
     },
     saveButtonText: {
         color: '#fff',
         fontSize: 16,
         fontWeight: '600',
+        textAlign: 'center',
     },
     unitRow: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        paddingVertical: 10,
+        backgroundColor: '#f5f5f5',
+        padding: 12,
+        borderRadius: 10,
     },
 }); 
