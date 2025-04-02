@@ -433,19 +433,18 @@ export default function App() {
     };
 
     return (
-        <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }}>
-            <View style={{ flex: 1 }}>
+        <SafeAreaView style={styles.container}>
+            <View style={styles.mainContent}>
                 {currentState === 'landing' && (
                     <>
-                        <Animated.View style={{
-                            opacity: contentOpacity,
-                            transform: [{ translateY: contentTranslateY }],
-                        }}>
-                            <SpinachLogo size="large" />
+                        <View style={styles.logoContainer}>
+                            <View style={styles.logoRow}>
+                                <SpinachLogo size="large" />
+                            </View>
                             <Text style={styles.tagline}>
                                 Give it a <Text style={styles.taglineHighlight}>SPIN</Text> to discover today's mystery vegan recipe!
                             </Text>
-                        </Animated.View>
+                        </View>
 
                         <View style={styles.spinButtonContainer}>
                             {/* Decorative circles */}
