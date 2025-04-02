@@ -341,6 +341,21 @@ export const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
   },
+
+  favoritesButton: {
+    position: 'absolute',
+    top: 20,
+    left: 20,
+    padding: 10,
+    backgroundColor: 'rgba(22, 163, 74, 0.1)',
+    borderRadius: 20,
+    zIndex: 999,
+    ...Platform.select({
+      android: {
+        elevation: 5,
+      },
+    }),
+  },
 });
 
 export default styles;

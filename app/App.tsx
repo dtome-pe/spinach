@@ -8,20 +8,24 @@ import {
     Easing,
     Dimensions,
     Alert,
+    StyleSheet,
+    Platform,
 } from 'react-native';
 import { Svg, Circle, Path } from 'react-native-svg';
-import { Feather } from '@expo/vector-icons';
+import { Feather, Ionicons } from '@expo/vector-icons';
 import { styles } from './styles';
 import { SpinachLogo } from './components/Logo';
 import { RecipeReveal } from './components/RecipeReveal';
 import { Settings, UserSettings } from './components/Settings';
 import { IngredientsList } from './components/IngredientsList';
 import { CookingSteps } from './components/CookingSteps';
+import { Favorites } from './components/Favorites';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Recipe, processRecipeData, adjustServings } from './utils/recipeUtils';
 import { API_CONFIG } from './config';
 import { testApiConnection } from './utils/apiTest';
 import { cacheRecipe, getCachedRecipe, getRecentRecipeIds } from './utils/cacheUtils';
+import { TEST_MODE } from '@env';
 
 // Get screen dimensions
 const { width } = Dimensions.get('window');
@@ -56,6 +60,7 @@ export default function App() {
         }
     });
     const [showSettings, setShowSettings] = useState(false);
+    const [showFavorites, setShowFavorites] = useState(false);
     const [servings, setServings] = useState(4);
 
     const spinAnim = useRef(new Animated.Value(0)).current;
@@ -428,8 +433,8 @@ export default function App() {
     };
 
     return (
-        <SafeAreaView style={styles.container}>
-            <View style={styles.mainContent}>
+        <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }}>
+            <View style={{ flex: 1 }}>
                 {currentState === 'landing' && (
                     <>
                         <Animated.View style={{
@@ -531,7 +536,15 @@ export default function App() {
                             </Text>
                         </Animated.View>
 
-                        {/* Add Settings Button */}
+                        {/* Add Favorites Button */}
+                        <TouchableOpacity
+                            style={styles.favoritesButton}
+                            onPress={() => setShowFavorites(true)}
+                        >
+                            <Ionicons name="heart" size={24} color="#16a34a" />
+                        </TouchableOpacity>
+
+                        {/* Settings Button */}
                         <TouchableOpacity
                             style={styles.settingsButton}
                             onPress={() => setShowSettings(true)}
@@ -613,6 +626,13 @@ export default function App() {
                             setSettings(newSettings);
                             setShowSettings(false);
                         }}
+                    />
+                )}
+
+                {showFavorites && (
+                    <Favorites
+                        visible={showFavorites}
+                        onClose={() => setShowFavorites(false)}
                     />
                 )}
             </View>
