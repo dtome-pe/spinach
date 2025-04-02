@@ -2,14 +2,19 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { styles } from '../styles';
 
-type SizeOption = 'small' | 'default' | 'large';
+type SizeOption = 'small' | 'default' | 'large' | 'medium';
+
+interface LogoProps {
+    size?: SizeOption;
+}
 
 // SpinachLogo component
-export const SpinachLogo = ({ size = 'default' }: { size?: SizeOption }) => {
+export const SpinachLogo: React.FC<LogoProps> = ({ size = 'default' }) => {
     const sizes = {
         small: { fontSize: 20 },
-        default: { fontSize: 28 },
-        large: { fontSize: 36 },
+        default: { fontSize: 32 },
+        medium: { fontSize: 32 },
+        large: { fontSize: 48 },
     };
 
     const currentSize = sizes[size];
@@ -39,4 +44,7 @@ export const SpinachLogo = ({ size = 'default' }: { size?: SizeOption }) => {
             ]} />
         </View>
     );
-}; 
+};
+
+// Add default export
+export default SpinachLogo; 

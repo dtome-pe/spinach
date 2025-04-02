@@ -3,18 +3,42 @@ import express from 'express';
 import dotenv from 'dotenv';
 import cors from 'cors';
 import axios from 'axios';
+import { mockSpinResponse, mockCookResponse } from './mockData.js';
+import os from 'os';
 
 dotenv.config();
 
 const app = express();
-app.use(cors());
+
+// Enhanced CORS configuration
+app.use(cors({
+  origin: '*', // Allow all origins in development
+  methods: ['GET', 'POST', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
+
 app.use(express.json());
 
 const PORT = process.env.PORT || 3001;
 const SPOONACULAR_API_KEY = process.env.SPOONACULAR_API_KEY;
+const TEST_MODE = process.env.TEST_MODE === 'true';
+
+// Log the current mode
+console.log(`🔧 Running in ${TEST_MODE ? 'TEST MODE' : 'LIVE MODE'}`);
 
 // Recipe spin endpoint
 app.get('/spin', async (req, res) => {
+    // If in test mode, return mock data
+    if (TEST_MODE) {
+        console.log('🧪 Using mock data for /spin endpoint');
+        return res.json({
+            id: mockSpinResponse.results[0].id,
+            title: mockSpinResponse.results[0].title,
+            image: mockSpinResponse.results[0].image,
+            readyInMinutes: 45 // Hardcoded since it's not in the mock data
+        });
+    }
+
     const { maxTime, ...rest } = req.query;
     const maxReadyTime = parseInt(maxTime) || 60;
 
@@ -75,6 +99,12 @@ app.get('/spin', async (req, res) => {
 
 // Cook endpoint - returns detailed recipe information
 app.get('/cook', async (req, res) => {
+    // If in test mode, return mock data
+    if (TEST_MODE) {
+        console.log('🧪 Using mock data for /cook endpoint');
+        return res.json(mockCookResponse);
+    }
+
     const { id } = req.query;
 
     if (!id) {
@@ -106,7 +136,34 @@ app.get('/cook', async (req, res) => {
     }
 });
 
-// Start the server
-app.listen(PORT, () => {
-    console.log(`🚀 Server running on http://localhost:${PORT}`);
+// Simple test endpoint to verify connectivity
+app.get('/test', (req, res) => {
+  console.log('📱 Test connection received from:', req.headers['user-agent']);
+  res.json({ 
+    success: true, 
+    message: 'Server connection successful!',
+    mode: TEST_MODE ? 'test' : 'live',
+    timestamp: new Date().toISOString()
+  });
 });
+
+// Start the server
+app.listen(PORT, '0.0.0.0', () => {
+    console.log(`🚀 Server running on http://localhost:${PORT}`);
+    console.log(`💻 For devices on your network, use http://${getLocalIpAddress()}:${PORT}`);
+});
+
+// Helper function to get the local IP address
+function getLocalIpAddress() {
+    const nets = os.networkInterfaces();
+    
+    for (const name of Object.keys(nets)) {
+        for (const net of nets[name]) {
+            // Skip over non-IPv4 and internal (loopback) addresses
+            if (net.family === 'IPv4' && !net.internal) {
+                return net.address;
+            }
+        }
+    }
+    return 'localhost';
+}

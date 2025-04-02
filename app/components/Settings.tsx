@@ -281,4 +281,6 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         paddingVertical: 10,
     },
-}); 
+});
+
+export default Settings; 

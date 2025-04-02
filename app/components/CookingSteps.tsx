@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
     StyleSheet,
     View,
@@ -14,6 +14,7 @@ import Animated, {
     withSpring,
     withSequence,
     withTiming,
+    runOnJS,
 } from 'react-native-reanimated';
 import { GestureDetector, Gesture } from 'react-native-gesture-handler';
 
@@ -36,8 +37,31 @@ export const CookingSteps: React.FC<CookingStepsProps> = ({ steps, onComplete, o
     const opacity = useSharedValue(1);
     const scale = useSharedValue(1);
 
+    const goToNextStep = useCallback(() => {
+        if (currentStep < steps.length - 1) {
+            setCurrentStep(prev => prev + 1);
+        }
+    }, [currentStep, steps.length]);
+
+    const goToPreviousStep = useCallback(() => {
+        if (currentStep > 0) {
+            setCurrentStep(prev => prev - 1);
+        } else {
+            onBack();
+        }
+    }, [currentStep, onBack]);
+
+    const handleBackNavigation = useCallback(() => {
+        onBack();
+    }, [onBack]);
+
     const panGesture = Gesture.Pan()
+        .onBegin(() => {
+            // Reset state when the gesture begins
+            translateY.value = 0;
+        })
         .onUpdate((event) => {
+            // During the gesture, update translateY to follow the finger
             translateY.value = event.translationY;
         })
         .onEnd((event) => {
@@ -51,7 +75,7 @@ export const CookingSteps: React.FC<CookingStepsProps> = ({ steps, onComplete, o
                     withTiming(0, { duration: 100 }),
                     withTiming(1, { duration: 100 })
                 );
-                setCurrentStep(prev => prev + 1);
+                runOnJS(goToNextStep)();
             } else if (event.translationY > 50) {
                 if (currentStep > 0) {
                     // Swipe down - previous step
@@ -63,12 +87,14 @@ export const CookingSteps: React.FC<CookingStepsProps> = ({ steps, onComplete, o
                         withTiming(0, { duration: 100 }),
                         withTiming(1, { duration: 100 })
                     );
-                    setCurrentStep(prev => prev - 1);
+                    runOnJS(goToPreviousStep)();
                 } else {
                     // Swipe down at first step - go back
-                    onBack();
+                    opacity.value = withTiming(0, { duration: 300 });
+                    setTimeout(() => runOnJS(handleBackNavigation)(), 300);
                 }
             } else {
+                // If the swipe wasn't significant, spring back to center
                 translateY.value = withSpring(0);
             }
         });
@@ -165,6 +191,9 @@ export const CookingSteps: React.FC<CookingStepsProps> = ({ steps, onComplete, o
         </View>
     );
 };
+
+// Add default export
+export default CookingSteps;
 
 const styles = StyleSheet.create({
     container: {

@@ -19,6 +19,9 @@ import { IngredientsList } from './components/IngredientsList';
 import { CookingSteps } from './components/CookingSteps';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Recipe, processRecipeData, adjustServings } from './utils/recipeUtils';
+import { API_CONFIG } from './config';
+import { testApiConnection } from './utils/apiTest';
+import { cacheRecipe, getCachedRecipe, getRecentRecipeIds } from './utils/cacheUtils';
 
 // Get screen dimensions
 const { width } = Dimensions.get('window');
@@ -78,6 +81,13 @@ export default function App() {
 
     useEffect(() => {
         loadSettings();
+        
+        // Test API connection on startup
+        testApiConnection().then(success => {
+            if (success) {
+                console.log('✅ Ready to fetch recipes!');
+            }
+        });
     }, []);
 
     const loadSettings = async () => {
@@ -256,31 +266,70 @@ export default function App() {
                     useNativeDriver: true,
                 })
             ])
-        ]).start();
+        ]).start(async () => {
+            try {
+                // Test the API connection before making the actual request
+                const connectionSuccess = await testApiConnection();
+                if (!connectionSuccess) {
+                    // If we're offline, try to get a random cached recipe
+                    try {
+                        const recentRecipeIds = await getRecentRecipeIds();
+                        if (recentRecipeIds.length > 0) {
+                            // Get a random recipe from cache
+                            const randomIndex = Math.floor(Math.random() * recentRecipeIds.length);
+                            const randomId = recentRecipeIds[randomIndex];
+                            const cachedRecipe = await getCachedRecipe(randomId);
+                            
+                            if (cachedRecipe) {
+                                Alert.alert(
+                                    "Offline Mode", 
+                                    "You're currently offline. Showing a recipe from your cache.",
+                                    [{ text: "OK" }]
+                                );
+                                setRecipe(cachedRecipe);
+                                setShowRecipe(true);
+                                setCurrentState('recipe');
+                                setIsSpinning(false);
+                                return;
+                            }
+                        }
+                    } catch (cacheError) {
+                        console.error('Error retrieving from cache:', cacheError);
+                    }
+                    
+                    // If we couldn't get a cached recipe
+                    setIsSpinning(false);
+                    return;
+                }
 
-        try {
-            const queryParams = new URLSearchParams({
-                maxTime: settings.maxCookingTime.toString(),
-                ...Object.entries(settings.allergens)
-                    .filter(([_, value]) => value)
-                    .map(([key]) => key)
-                    .reduce((acc, key) => ({ ...acc, [key]: 'true' }), {})
-            });
+                const queryParams = new URLSearchParams({
+                    maxTime: settings.maxCookingTime.toString(),
+                    ...Object.entries(settings.allergens)
+                        .filter(([_, value]) => value)
+                        .map(([key]) => key)
+                        .reduce((acc, key) => ({ ...acc, [key]: 'true' }), {})
+                });
 
-            const response = await fetch(`http://localhost:3001/spin?${queryParams}`);
-            if (!response.ok) {
-                throw new Error('Failed to fetch recipe');
+                const response = await fetch(`${API_CONFIG.baseURL}/spin?${queryParams}`);
+                if (!response.ok) {
+                    throw new Error('Failed to fetch recipe');
+                }
+                const data = await response.json();
+                setRecipe(data);
+                setShowRecipe(true);
+                setCurrentState('recipe');
+
+                // Cache the recipe for offline use
+                if (data) {
+                    cacheRecipe(data);
+                }
+            } catch (error) {
+                console.error('Error fetching recipe:', error);
+                Alert.alert('Error', 'Failed to fetch recipe. Please try again.');
+            } finally {
+                setIsSpinning(false);
             }
-            const data = await response.json();
-            setRecipe(data);
-            setShowRecipe(true);
-            setCurrentState('recipe');
-        } catch (error) {
-            console.error('Error fetching recipe:', error);
-            Alert.alert('Error', 'Failed to fetch recipe. Please try again.');
-        } finally {
-            setIsSpinning(false);
-        }
+        });
     };
 
     const spin = spinAnim.interpolate({
@@ -312,12 +361,39 @@ export default function App() {
         if (!recipe) return;
         
         try {
-            const response = await fetch(`http://localhost:3001/cook?id=${recipe.id}`);
+            // Check if we have connection
+            const connectionSuccess = await testApiConnection();
+            
+            // If offline, check if we already have the full recipe cached
+            if (!connectionSuccess) {
+                const cachedRecipe = await getCachedRecipe(recipe.id);
+                if (cachedRecipe && cachedRecipe.analyzedInstructions) {
+                    // We have a complete cached recipe
+                    setRecipe(cachedRecipe);
+                    setServings(cachedRecipe.servings);
+                    setCurrentState('ingredients');
+                    return;
+                } else {
+                    Alert.alert(
+                        "Network Required", 
+                        "You need an internet connection to view the full recipe details.",
+                        [{ text: "OK" }]
+                    );
+                    return;
+                }
+            }
+            
+            // Fetch from network if we have connection
+            const response = await fetch(`${API_CONFIG.baseURL}/cook?id=${recipe.id}`);
             if (!response.ok) {
                 throw new Error('Failed to fetch recipe details');
             }
             const rawRecipe = await response.json();
             const processedRecipe = processRecipeData(rawRecipe, settings.useMetric);
+            
+            // Cache the full recipe
+            cacheRecipe(processedRecipe);
+            
             setRecipe(processedRecipe);
             setServings(processedRecipe.servings);
             setCurrentState('ingredients');
