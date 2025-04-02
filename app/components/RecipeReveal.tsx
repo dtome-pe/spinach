@@ -2,12 +2,12 @@ import React from 'react';
 import {
     View,
     Text,
+    StyleSheet,
     Image,
     TouchableOpacity,
     Dimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { styles as appStyles } from '../styles';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const IMAGE_HEIGHT = SCREEN_WIDTH * 0.75;
@@ -34,11 +34,11 @@ export const RecipeReveal: React.FC<RecipeRevealProps> = ({
     console.log('RecipeReveal rendering with image URL:', recipe.image);
     
     return (
-        <View style={appStyles.recipeRevealContainer}>
-            <View style={appStyles.recipeImage}>
+        <View style={styles.container}>
+            <View style={styles.imageContainer}>
                 <Image 
                     source={{ uri: recipe.image }} 
-                    style={{ width: '100%', height: '100%' }}
+                    style={styles.image}
                     resizeMode="cover"
                     onError={(error) => {
                         console.error('Image loading error in RecipeReveal:', error.nativeEvent);
@@ -57,20 +57,22 @@ export const RecipeReveal: React.FC<RecipeRevealProps> = ({
                     }}
                 />
             </View>
-            <View style={appStyles.recipeContent}>
-                <Text style={appStyles.recipeTitle}>{recipe.title}</Text>
-                <View style={appStyles.recipeButtons}>
+            <View style={styles.content}>
+                <Text style={styles.title}>{recipe.title}</Text>
+                <View style={styles.buttonContainer}>
                     <TouchableOpacity
-                        style={[appStyles.recipeButton, appStyles.resetButton]}
+                        style={[styles.button, styles.tryAnotherButton]}
                         onPress={onTryAnother}
                     >
-                        <Text style={appStyles.recipeButtonText}>Try Another</Text>
+                        <Ionicons name="refresh" size={24} color="#007AFF" />
+                        <Text style={styles.tryAnotherButtonText}>Try Another</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
-                        style={[appStyles.recipeButton, appStyles.cookButton]}
+                        style={[styles.button, styles.startCookingButton]}
                         onPress={onStartCooking}
                     >
-                        <Text style={appStyles.recipeButtonText}>Start Cooking</Text>
+                        <Ionicons name="restaurant" size={24} color="#fff" />
+                        <Text style={styles.startCookingButtonText}>Start Cooking</Text>
                     </TouchableOpacity>
                 </View>
             </View>
