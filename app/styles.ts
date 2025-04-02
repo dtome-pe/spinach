@@ -136,6 +136,20 @@ export const styles = StyleSheet.create({
       },
     }),
   },
+  homeButton: {
+    position: 'absolute',
+    top: Platform.OS === 'ios' ? 50 : 20,
+    left: 20,
+    padding: 10,
+    backgroundColor: 'rgba(22, 163, 74, 0.1)',
+    borderRadius: 20,
+    zIndex: 999,
+    ...Platform.select({
+      android: {
+        elevation: 5,
+      },
+    }),
+  },
   settingsHeader: {
     flexDirection: 'row',
     alignItems: 'center',

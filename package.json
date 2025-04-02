@@ -31,6 +31,7 @@
     "expo-linking": "~7.0.5",
     "expo-router": "~4.0.19",
     "expo-splash-screen": "~0.29.22",
+    "expo-sqlite": "~15.1.4",
     "expo-status-bar": "~2.0.1",
     "expo-symbols": "~0.2.2",
     "expo-system-ui": "~4.0.8",
@@ -45,8 +46,7 @@
     "react-native-screens": "~4.4.0",
     "react-native-svg": "^15.11.2",
     "react-native-web": "~0.19.13",
-    "react-native-webview": "13.12.5",
-    "expo-sqlite": "~15.1.4"
+    "react-native-webview": "13.12.5"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",
