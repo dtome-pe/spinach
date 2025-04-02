@@ -1,14 +1,18 @@
 import React, { useState } from 'react';
 import {
-    StyleSheet,
     View,
     Text,
     ScrollView,
     TouchableOpacity,
     Share,
+    StyleSheet,
+    TextStyle,
+    ViewStyle,
+    StyleProp,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { decimalToFraction } from '../utils/recipeUtils';
+import { styles as appStyles } from '../styles';
 
 interface Ingredient {
     id: number;
@@ -123,38 +127,38 @@ Get Spinach App to start cooking delicious plant-based recipes today!`;
     };
 
     return (
-        <View style={styles.container}>
+        <View style={appStyles.container}>
             <View style={styles.titleContainer}>
-                <Text style={styles.title}>{recipe.title}</Text>
+                <Text style={appStyles.recipeTitle}>{recipe.title}</Text>
             </View>
             <View style={styles.header}>
                 <View style={styles.servingsContainer}>
                     <TouchableOpacity
-                        style={styles.servingsButton}
+                        style={[appStyles.numberButton, { marginRight: 8 }]}
                         onPress={() => onServingsChange(Math.max(1, servings - 1))}
                     >
-                        <Ionicons name="remove" size={24} color="#007AFF" />
+                        <Text style={appStyles.numberButtonText}>-</Text>
                     </TouchableOpacity>
                     <View style={styles.servingsTextContainer}>
-                        <Ionicons name="people" size={24} color="#333" />
-                        <Text style={styles.servingsText}>{servings}</Text>
+                        <Ionicons name="people" size={24} color={COLORS.primaryDark} />
+                        <Text style={[appStyles.numberValue, { fontWeight: '600' }]}>{servings}</Text>
                     </View>
                     <TouchableOpacity
-                        style={styles.servingsButton}
+                        style={[appStyles.numberButton, { marginLeft: 8 }]}
                         onPress={() => onServingsChange(servings + 1)}
                     >
-                        <Ionicons name="add" size={24} color="#007AFF" />
+                        <Text style={appStyles.numberButtonText}>+</Text>
                     </TouchableOpacity>
                 </View>
                 <View style={styles.timeContainer}>
-                    <Ionicons name="time-outline" size={20} color="#666" />
+                    <Ionicons name="time-outline" size={20} color={COLORS.primaryDark} />
                     <Text style={styles.timeText}>{readyInMinutes} minutes</Text>
                 </View>
                 <TouchableOpacity
                     style={styles.shareButton}
                     onPress={shareShoppingList}
                 >
-                    <Ionicons name="share-outline" size={24} color="#007AFF" />
+                    <Ionicons name="share-outline" size={24} color={COLORS.primary} />
                 </TouchableOpacity>
             </View>
 
@@ -163,7 +167,7 @@ Get Spinach App to start cooking delicious plant-based recipes today!`;
                     style={styles.toggleAllButton}
                     onPress={toggleAllIngredients}
                 >
-                    <Text style={styles.toggleAllText}>
+                    <Text style={{ color: COLORS.primary, fontSize: appStyles.body, fontWeight: '600' }}>
                         {checkedIngredients.size === ingredients.length ? 'Uncheck All' : 'Check All'}
                     </Text>
                 </TouchableOpacity>
@@ -179,6 +183,7 @@ Get Spinach App to start cooking delicious plant-based recipes today!`;
                     >
                         <View style={[
                             styles.ingredientCheckbox,
+                            { borderColor: COLORS.primary },
                             checkedIngredients.has(ingredient.id) && styles.checkedIngredientCheckbox
                         ]}>
                             {checkedIngredients.has(ingredient.id) && (
@@ -187,6 +192,7 @@ Get Spinach App to start cooking delicious plant-based recipes today!`;
                         </View>
                         <Text style={[
                             styles.ingredientText,
+                            { color: COLORS.textLight },
                             checkedIngredients.has(ingredient.id) && styles.checkedIngredientText
                         ]}>
                             {formatAmount(ingredient)}{formatUnit(ingredient.unit) ? ' ' + formatUnit(ingredient.unit) : ''} {ingredient.name}
@@ -196,29 +202,32 @@ Get Spinach App to start cooking delicious plant-based recipes today!`;
             </ScrollView>
 
             <TouchableOpacity
-                style={styles.startCookingButton}
+                style={[appStyles.recipeButton, appStyles.cookButton, { margin: 20 }]}
                 onPress={onStartSteps}
             >
-                <Text style={styles.startCookingButtonText}>Start Cooking</Text>
+                <Text style={appStyles.recipeButtonText}>Start Cooking</Text>
             </TouchableOpacity>
         </View>
     );
 };
 
-const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: '#fff',
-    },
+// Define colors here to match the app-wide colors
+const COLORS = {
+    background: '#f0fdf4',        // Light green background
+    primary: '#16a34a',           // Primary green 
+    primaryDark: '#166534',       // Dark green for text
+    secondaryBg: '#dcfce7',       // Secondary background/highlight
+    text: '#166534',              // Main text color (dark green)
+    textLight: '#374151',         // Secondary text color (gray)
+    white: '#ffffff',             // White color
+};
+
+// Keep only the local styles that aren't already in the app styles
+const styles = {
     titleContainer: {
         padding: 20,
         borderBottomWidth: 1,
-        borderBottomColor: '#eee',
-    },
-    title: {
-        fontSize: 24,
-        fontWeight: 'bold',
-        color: '#333',
+        borderBottomColor: COLORS.secondaryBg,
     },
     header: {
         flexDirection: 'row',
@@ -226,36 +235,28 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         padding: 20,
         borderBottomWidth: 1,
-        borderBottomColor: '#eee',
+        borderBottomColor: COLORS.secondaryBg,
     },
     servingsContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-    },
-    servingsButton: {
-        padding: 8,
     },
     servingsTextContainer: {
         flexDirection: 'row',
         alignItems: 'center',
         marginHorizontal: 16,
     },
-    servingsText: {
-        fontSize: 18,
-        fontWeight: '600',
-        marginLeft: 8,
-    },
     timeContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#f5f5f5',
+        backgroundColor: COLORS.secondaryBg,
         paddingHorizontal: 12,
         paddingVertical: 6,
         borderRadius: 16,
     },
     timeText: {
         marginLeft: 4,
-        color: '#666',
+        color: COLORS.primaryDark,
     },
     shareButton: {
         padding: 8,
@@ -267,35 +268,29 @@ const styles = StyleSheet.create({
         padding: 16,
         alignItems: 'center',
         borderBottomWidth: 1,
-        borderBottomColor: '#eee',
-    },
-    toggleAllText: {
-        color: '#007AFF',
-        fontSize: 16,
-        fontWeight: '600',
+        borderBottomColor: COLORS.secondaryBg,
     },
     ingredientItem: {
         flexDirection: 'row',
         alignItems: 'center',
         padding: 16,
         borderBottomWidth: 1,
-        borderBottomColor: '#eee',
+        borderBottomColor: COLORS.secondaryBg,
     },
     checkedIngredient: {
-        backgroundColor: '#f8f8f8',
+        backgroundColor: COLORS.background,
     },
     ingredientCheckbox: {
         width: 24,
         height: 24,
         borderRadius: 12,
         borderWidth: 2,
-        borderColor: '#007AFF',
         marginRight: 12,
         justifyContent: 'center',
         alignItems: 'center',
     },
     checkedIngredientCheckbox: {
-        backgroundColor: '#f8f8f8',
+        backgroundColor: COLORS.background,
         borderColor: '#999',
     },
     ingredientText: {
@@ -306,18 +301,6 @@ const styles = StyleSheet.create({
         textDecorationLine: 'line-through',
         color: '#999',
     },
-    startCookingButton: {
-        backgroundColor: '#007AFF',
-        padding: 20,
-        margin: 20,
-        borderRadius: 10,
-        alignItems: 'center',
-    },
-    startCookingButtonText: {
-        color: '#fff',
-        fontSize: 18,
-        fontWeight: '600',
-    },
-});
+};
 
 export default IngredientsList; 
