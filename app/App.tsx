@@ -10,6 +10,7 @@ import {
     Alert,
     StyleSheet,
     Platform,
+    ViewStyle,
 } from 'react-native';
 import { Svg, Circle, Path } from 'react-native-svg';
 import { Feather, Ionicons } from '@expo/vector-icons';
@@ -282,20 +283,88 @@ export default function App() {
         });
     };
 
+    const handleHomePress = () => {
+        // Reset to landing page
+        setCurrentState('landing');
+        setRecipe(null);
+        setShowRecipe(false);
+    };
+
+    // Render the floating action buttons based on current state
+    const renderActionButtons = () => {
+        // Common button styles
+        const buttonStyle: ViewStyle = {
+            position: 'absolute',
+            padding: 10,
+            backgroundColor: 'rgba(22, 163, 74, 0.1)',
+            borderRadius: 20,
+            zIndex: 999,
+        };
+
+        if (currentState === 'landing') {
+            return (
+                <>
+                    {/* Favorites Button */}
+                    <TouchableOpacity
+                        style={[buttonStyle, styles.favoritesButton]}
+                        onPress={() => setShowFavorites(true)}
+                    >
+                        <Ionicons name="heart" size={24} color="#16a34a" />
+                    </TouchableOpacity>
+
+                    {/* Settings Button */}
+                    <TouchableOpacity
+                        style={[buttonStyle, styles.settingsButton]}
+                        onPress={() => setShowSettings(true)}
+                    >
+                        <Feather name="settings" size={24} color="#16a34a" />
+                    </TouchableOpacity>
+                </>
+            );
+        } else {
+            return (
+                <>
+                    {/* Home Button */}
+                    <TouchableOpacity
+                        style={[buttonStyle, { left: 20, top: Platform.OS === 'ios' ? 50 : 20 }]}
+                        onPress={handleHomePress}
+                    >
+                        <Ionicons name="leaf" size={24} color="#16a34a" />
+                    </TouchableOpacity>
+
+                    {/* Settings Button */}
+                    <TouchableOpacity
+                        style={[buttonStyle, styles.settingsButton]}
+                        onPress={() => setShowSettings(true)}
+                    >
+                        <Feather name="settings" size={24} color="#16a34a" />
+                    </TouchableOpacity>
+                </>
+            );
+        }
+    };
+
     return (
         <SafeAreaView style={styles.container}>
             <View style={styles.mainContent}>
+                {/* Action Buttons (Home/Favorites and Settings) */}
+                {renderActionButtons()}
+
+                {/* Landing page content */}
                 {currentState === 'landing' && (
                     <>
                         <View style={styles.logoContainer}>
                             <View style={styles.logoRow}>
                                 <SpinachLogo size="large" />
                             </View>
-                            <Text style={styles.tagline}>
-                                Give it a <Text style={styles.taglineHighlight}>SPIN</Text> to discover today's mystery vegan recipe!
-                            </Text>
                         </View>
+                        
+                        {/* Tagline */}
+                        <Animated.Text style={[styles.tagline, { opacity: contentOpacity }]}>
+                            Find <Text style={styles.taglineHighlight}>delicious</Text> recipes based on <Text style={styles.taglineHighlight}>what's fresh</Text> today
+                        </Animated.Text>
 
+                        {/* Spin Button */}
                         <View style={styles.spinButtonContainer}>
                             {/* Decorative circles */}
                             <Animated.View style={[
@@ -351,25 +420,10 @@ export default function App() {
                                 Eco-friendly • Organic • 100% Plant-based
                             </Text>
                         </Animated.View>
-
-                        {/* Add Favorites Button */}
-                        <TouchableOpacity
-                            style={styles.favoritesButton}
-                            onPress={() => setShowFavorites(true)}
-                        >
-                            <Ionicons name="heart" size={24} color="#16a34a" />
-                        </TouchableOpacity>
-
-                        {/* Settings Button */}
-                        <TouchableOpacity
-                            style={styles.settingsButton}
-                            onPress={() => setShowSettings(true)}
-                        >
-                            <Feather name="settings" size={24} color="#16a34a" />
-                        </TouchableOpacity>
                     </>
                 )}
 
+                {/* Recipe page */}
                 {currentState === 'recipe' && recipe && (
                     <RecipeReveal
                         recipe={recipe}
@@ -397,6 +451,7 @@ export default function App() {
                     />
                 )}
 
+                {/* Modals */}
                 {showSettings && (
                     <Settings
                         visible={showSettings}
