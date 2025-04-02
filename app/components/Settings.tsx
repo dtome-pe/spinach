@@ -306,4 +306,6 @@ const styles = StyleSheet.create({
         padding: 12,
         borderRadius: 10,
     },
-}); 
+});
+
+export default Settings; 

@@ -176,4 +176,10 @@ export const decimalToFraction = (decimal: number): string => {
     
     // If all else fails, just show the decimal rounded to 1 place
     return rounded.toFixed(1);
+};
+
+// Add a default export
+export default {
+  processRecipeData,
+  adjustServings,
 }; 

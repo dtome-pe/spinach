@@ -53,6 +53,9 @@ export const RecipeReveal: React.FC<RecipeRevealProps> = ({
     );
 };
 
+// Add default export
+export default RecipeReveal;
+
 const styles = StyleSheet.create({
     container: {
         flex: 1,

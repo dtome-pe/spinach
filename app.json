@@ -1,5 +1,35 @@
 {
   "expo": {
+    "name": "spinach",
+    "slug": "spinach",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.spinach.app"
+    },
+    "android": {
+      "package": "com.dtomepe.recipe_app",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
+      }
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "scheme": "spinach",
+    "newArchEnabled": true,
     "extra": {
       "eas": {
         "projectId": "4b3086f9-eaf8-4f32-85b4-f8709d5a7442"
@@ -11,5 +41,8 @@
     "ios": {
       "bundleIdentifier": "com.dtomepe.recipe-app"
     }
+    "plugins": [
+      "expo-router"
+    ]
   }
 }
