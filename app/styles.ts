@@ -1,6 +1,6 @@
 import { StyleSheet, Dimensions, Platform } from 'react-native';
 
-const { width } = Dimensions.get('window');
+const { width, height } = Dimensions.get('window');
 
 export const styles = StyleSheet.create({
   container: {
@@ -11,11 +11,12 @@ export const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 20,
+    paddingHorizontal: 20,
   },
   logoContainer: {
     alignItems: 'center',
-    marginBottom: 20,
+    marginBottom: height * 0.05,
+    marginTop: height * 0.1,
   },
   logoRow: {
     flexDirection: 'row',
@@ -39,7 +40,7 @@ export const styles = StyleSheet.create({
     fontSize: 18,
     color: '#166534',
     textAlign: 'center',
-    marginBottom: 40,
+    marginBottom: height * 0.05,
   },
   taglineHighlight: {
     fontWeight: 'bold',
@@ -47,10 +48,11 @@ export const styles = StyleSheet.create({
   },
   spinButtonContainer: {
     position: 'relative',
-    width: 200,
-    height: 200,
+    width: Math.min(width * 0.5, 200),
+    height: Math.min(width * 0.5, 200),
     alignItems: 'center',
     justifyContent: 'center',
+    alignSelf: 'center',
   },
   decorativeCircleOuter: {
     position: 'absolute',
@@ -103,12 +105,27 @@ export const styles = StyleSheet.create({
     fontSize: 14,
     color: '#166534',
     textAlign: 'center',
-    marginTop: 40,
+    marginTop: height * 0.05,
+    marginBottom: height * 0.05,
   },
   settingsButton: {
     position: 'absolute',
-    top: 20,
+    top: Platform.OS === 'ios' ? 50 : 20,
     right: 20,
+    padding: 10,
+    backgroundColor: 'rgba(22, 163, 74, 0.1)',
+    borderRadius: 20,
+    zIndex: 999,
+    ...Platform.select({
+      android: {
+        elevation: 5,
+      },
+    }),
+  },
+  favoritesButton: {
+    position: 'absolute',
+    top: Platform.OS === 'ios' ? 50 : 20,
+    left: 20,
     padding: 10,
     backgroundColor: 'rgba(22, 163, 74, 0.1)',
     borderRadius: 20,
@@ -340,21 +357,6 @@ export const styles = StyleSheet.create({
     color: 'white',
     fontSize: 18,
     fontWeight: 'bold',
-  },
-
-  favoritesButton: {
-    position: 'absolute',
-    top: 20,
-    left: 20,
-    padding: 10,
-    backgroundColor: 'rgba(22, 163, 74, 0.1)',
-    borderRadius: 20,
-    zIndex: 999,
-    ...Platform.select({
-      android: {
-        elevation: 5,
-      },
-    }),
   },
 });
 
