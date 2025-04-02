@@ -5,8 +5,12 @@ import {
     StyleSheet,
     Image,
     TouchableOpacity,
+    Dimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const IMAGE_HEIGHT = SCREEN_WIDTH * 0.75;
 
 interface RecipeRevealProps {
     recipe: {
@@ -29,7 +33,13 @@ export const RecipeReveal: React.FC<RecipeRevealProps> = ({
 }) => {
     return (
         <View style={styles.container}>
-            <Image source={{ uri: recipe.image }} style={styles.image} />
+            <View style={styles.imageContainer}>
+                <Image 
+                    source={{ uri: recipe.image }} 
+                    style={styles.image}
+                    resizeMode="cover"
+                />
+            </View>
             <View style={styles.content}>
                 <Text style={styles.title}>{recipe.title}</Text>
                 <View style={styles.buttonContainer}>
@@ -53,7 +63,6 @@ export const RecipeReveal: React.FC<RecipeRevealProps> = ({
     );
 };
 
-// Add default export
 export default RecipeReveal;
 
 const styles = StyleSheet.create({
@@ -61,9 +70,14 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: '#fff',
     },
+    imageContainer: {
+        width: '100%',
+        height: IMAGE_HEIGHT,
+        backgroundColor: '#f3f4f6',
+    },
     image: {
         width: '100%',
-        height: 300,
+        height: '100%',
     },
     content: {
         flex: 1,

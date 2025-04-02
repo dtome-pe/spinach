@@ -35,9 +35,9 @@
         "projectId": "4b3086f9-eaf8-4f32-85b4-f8709d5a7442"
       }
     },
-
     "plugins": [
-      "expo-router"
+      "expo-router",
+      "expo-sqlite"
     ]
   }
 }
