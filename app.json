@@ -35,6 +35,12 @@
         "projectId": "4b3086f9-eaf8-4f32-85b4-f8709d5a7442"
       }
     },
+    "android": {
+      "package": "com.dtomepe.recipe_app"
+    },
+    "ios": {
+      "bundleIdentifier": "com.dtomepe.recipe-app"
+    }
     "plugins": [
       "expo-router"
     ]
