@@ -30,14 +30,6 @@ import { TEST_MODE } from '@env';
 // Get screen dimensions
 const { width } = Dimensions.get('window');
 
-type VeggieAnimation = {
-    translateY: Animated.Value;
-    translateX: Animated.Value;
-    rotate: Animated.Value;
-    opacity: Animated.Value;
-    scale: Animated.Value;
-};
-
 type AppState = 'landing' | 'recipe' | 'ingredients' | 'cooking';
 
 export default function App() {
@@ -73,17 +65,6 @@ export default function App() {
     const contentOpacity = useRef(new Animated.Value(1)).current;
     const contentTranslateY = useRef(new Animated.Value(0)).current;
 
-    // Increased number of vegetables significantly
-    const veggieAnimations = useRef<VeggieAnimation[]>(
-        Array(40).fill(0).map((_: unknown, index: number) => ({
-            translateY: new Animated.Value(-100),
-            translateX: new Animated.Value(0),
-            rotate: new Animated.Value(0),
-            opacity: new Animated.Value(0),
-            scale: new Animated.Value(1),
-        }))
-    ).current;
-
     useEffect(() => {
         loadSettings();
         
@@ -106,130 +87,14 @@ export default function App() {
         }
     };
 
-    // Helper function to get a random vegetable emoji and its color
-    const getVeggieEmoji = (index: number): { emoji: string; color: string } => {
-        const veggies = [
-            { emoji: "🥕", color: "#ff6b35" },  // Carrot
-            { emoji: "🥦", color: "#4CAF50" },  // Broccoli
-            { emoji: "🍆", color: "#7B1FA2" },  // Eggplant
-            { emoji: "🥬", color: "#8BC34A" },  // Lettuce
-            { emoji: "🥑", color: "#33691E" },  // Avocado
-            { emoji: "🧅", color: "#B39DDB" },  // Onion
-            { emoji: "🥒", color: "#2E7D32" },  // Cucumber
-            { emoji: "🌶️", color: "#D32F2F" },  // Pepper
-            { emoji: "🍅", color: "#D32F2F" },  // Tomato
-            { emoji: "🥔", color: "#795548" },  // Potato
-        ];
-        return veggies[index % veggies.length];
-    };
-
-    const createVeggieAnimation = (index: number): Animated.CompositeAnimation => {
-        const buttonCenterY = 450;
-        const numVeggies = veggieAnimations.length;
-        
-        // Calculate angle with faster rotation for emission points
-        const baseAngle = (2 * Math.PI) / numVeggies;
-        const rotationSpeed = 1.69; // Reduced from 2.25 to 1.69 (25% slower)
-        const finalAngle = (index * baseAngle) + (index * baseAngle * rotationSpeed);
-        
-        // Calculate final position (radiating outward)
-        const radiateDistance = 600 + Math.random() * 200;
-        const finalX = Math.cos(finalAngle) * radiateDistance;
-        const finalY = Math.sin(finalAngle) * radiateDistance;
-
-        // Shorter, more frequent timing
-        const baseDuration = 1500; // Reduced from 2500 to 1500
-        const sequentialDelay = index * 50; // Reduced from 100 to 50 for more frequent emissions
-        const randomDuration = baseDuration + Math.random() * 300; // Reduced random variation
-        const randomScale = 1.2 + Math.random() * 1.3;
-
-        // Reset initial values to center position
-        veggieAnimations[index].translateY.setValue(buttonCenterY);
-        veggieAnimations[index].translateX.setValue(0);
-        veggieAnimations[index].rotate.setValue(0);
-        veggieAnimations[index].opacity.setValue(0);
-        veggieAnimations[index].scale.setValue(0.3);
-
-        return Animated.parallel([
-            // Radial translation with easing
-            Animated.timing(veggieAnimations[index].translateY, {
-                toValue: buttonCenterY + finalY,
-                duration: randomDuration,
-                delay: sequentialDelay,
-                easing: Easing.out(Easing.quad),
-                useNativeDriver: true,
-            }),
-            Animated.timing(veggieAnimations[index].translateX, {
-                toValue: finalX,
-                duration: randomDuration,
-                delay: sequentialDelay,
-                easing: Easing.out(Easing.quad),
-                useNativeDriver: true,
-            }),
-            // Moderate rotation for the veggies themselves
-            Animated.timing(veggieAnimations[index].rotate, {
-                toValue: 4 + Math.random() * 2,
-                duration: randomDuration,
-                delay: sequentialDelay,
-                easing: Easing.out(Easing.quad),
-                useNativeDriver: true,
-            }),
-            // Scale with gentle burst effect
-            Animated.sequence([
-                // Quick scale up at start
-                Animated.timing(veggieAnimations[index].scale, {
-                    toValue: randomScale * 1.1,
-                    duration: 150,
-                    delay: sequentialDelay,
-                    easing: Easing.out(Easing.quad),
-                    useNativeDriver: true,
-                }),
-                // Settle to normal size
-                Animated.timing(veggieAnimations[index].scale, {
-                    toValue: randomScale,
-                    duration: 150,
-                    easing: Easing.out(Easing.quad),
-                    useNativeDriver: true,
-                }),
-                // Faster scale down as they fly away
-                Animated.timing(veggieAnimations[index].scale, {
-                    toValue: randomScale * 0.7,
-                    duration: randomDuration - 300,
-                    easing: Easing.in(Easing.quad),
-                    useNativeDriver: true,
-                }),
-            ]),
-            // Opacity with shorter visibility
-            Animated.sequence([
-                // Fade in quickly
-                Animated.timing(veggieAnimations[index].opacity, {
-                    toValue: 1,
-                    duration: 100,
-                    delay: sequentialDelay,
-                    useNativeDriver: true,
-                }),
-                // Stay visible for shorter time
-                Animated.timing(veggieAnimations[index].opacity, {
-                    toValue: 1,
-                    duration: randomDuration - 200,
-                    useNativeDriver: true,
-                }),
-                // Faster fade out
-                Animated.timing(veggieAnimations[index].opacity, {
-                    toValue: 0,
-                    duration: 150,
-                    easing: Easing.in(Easing.quad),
-                    useNativeDriver: true,
-                }),
-            ]),
-        ]);
-    };
-
     const handleSpin = async () => {
         if (isSpinning) return;
         setIsSpinning(true);
         setShowRecipe(false);
         setShowSettings(false);
+
+        // Reset animation value before starting new animation
+        spinAnim.setValue(0);
 
         // Start animations
         Animated.parallel([
@@ -238,39 +103,7 @@ export default function App() {
                 duration: 2000,
                 easing: Easing.out(Easing.cubic),
                 useNativeDriver: true,
-            }),
-            ...veggieAnimations.flatMap(animation => [
-                Animated.timing(animation.translateY, {
-                    toValue: 1,
-                    duration: 2000,
-                    easing: Easing.out(Easing.cubic),
-                    useNativeDriver: true,
-                }),
-                Animated.timing(animation.translateX, {
-                    toValue: 1,
-                    duration: 2000,
-                    easing: Easing.out(Easing.cubic),
-                    useNativeDriver: true,
-                }),
-                Animated.timing(animation.rotate, {
-                    toValue: 1,
-                    duration: 2000,
-                    easing: Easing.out(Easing.cubic),
-                    useNativeDriver: true,
-                }),
-                Animated.timing(animation.opacity, {
-                    toValue: 1,
-                    duration: 2000,
-                    easing: Easing.out(Easing.cubic),
-                    useNativeDriver: true,
-                }),
-                Animated.timing(animation.scale, {
-                    toValue: 1,
-                    duration: 2000,
-                    easing: Easing.out(Easing.cubic),
-                    useNativeDriver: true,
-                })
-            ])
+            })
         ]).start(async () => {
             try {
                 // Test the API connection before making the actual request
@@ -320,6 +153,23 @@ export default function App() {
                     throw new Error('Failed to fetch recipe');
                 }
                 const data = await response.json();
+                console.log('Raw recipe data:', JSON.stringify(data, null, 2));
+
+                // Ensure we have an image URL
+                if (!data.image) {
+                    console.error('No image URL in recipe data');
+                    throw new Error('Recipe data is missing image URL');
+                }
+
+                // Clean up the image URL
+                if (data.image.startsWith('//')) {
+                    data.image = 'https:' + data.image;
+                } else if (!data.image.startsWith('http')) {
+                    data.image = `${API_CONFIG.baseURL}${data.image.startsWith('/') ? '' : '/'}${data.image}`;
+                }
+
+                console.log('Final image URL:', data.image);
+                
                 setRecipe(data);
                 setShowRecipe(true);
                 setCurrentState('recipe');
@@ -486,42 +336,9 @@ export default function App() {
                                     disabled={isSpinning}
                                     activeOpacity={0.8}
                                 >
-                                    {isSpinning ? (
-                                        <View style={styles.spinButtonWrapper}>
-                                            <TouchableOpacity
-                                                style={styles.spinButton}
-                                                onPress={handleSpin}
-                                                disabled={isSpinning}
-                                            >
-                                                <Text style={styles.spinButtonText}>SPIN</Text>
-                                            </TouchableOpacity>
-                                        </View>
-                                    ) : (
-                                        <View>
-                                            <Svg height="100%" width="100%" viewBox="0 0 100 100" style={styles.spinButtonSvg}>
-                                                <Circle
-                                                    cx="50"
-                                                    cy="50"
-                                                    r="40"
-                                                    stroke="rgba(255,255,255,0.3)"
-                                                    strokeWidth="2"
-                                                    strokeDasharray="5,5"
-                                                    fill="none"
-                                                />
-                                                <Path
-                                                    d="M 85,50 L 90,45 L 95,50"
-                                                    stroke="rgba(255,255,255,0.7)"
-                                                    strokeWidth="2"
-                                                    strokeLinecap="round"
-                                                    strokeLinejoin="round"
-                                                    fill="none"
-                                                />
-                                            </Svg>
-                                            <View style={styles.spinTextContainer}>
-                                                <Text style={styles.spinButtonText}>SPIN</Text>
-                                            </View>
-                                        </View>
-                                    )}
+                                    <View style={styles.spinTextContainer}>
+                                        <Text style={styles.spinButtonText}>SPIN</Text>
+                                    </View>
                                 </TouchableOpacity>
                             </Animated.View>
                         </View>
@@ -552,43 +369,6 @@ export default function App() {
                         </TouchableOpacity>
                     </>
                 )}
-
-                {/* Falling vegetables - always visible */}
-                {veggieAnimations.map((anim, index) => {
-                    const veggie = getVeggieEmoji(index);
-                    return (
-                        <Animated.View
-                            key={index}
-                            style={{
-                                position: 'absolute',
-                                top: 0,
-                                left: '50%',
-                                transform: [
-                                    { translateY: anim.translateY },
-                                    { translateX: anim.translateX },
-                                    { rotate: anim.rotate.interpolate({
-                                        inputRange: [0, 1],
-                                        outputRange: ['0deg', '360deg']
-                                    })},
-                                    { scale: anim.scale }
-                                ],
-                                opacity: anim.opacity,
-                                zIndex: showRecipe ? 1 : 0,
-                            }}
-                        >
-                            <View style={{
-                                backgroundColor: 'rgba(22, 163, 74, 0.15)',
-                                borderRadius: 20,
-                                padding: 4,
-                            }}>
-                                <Text style={{ 
-                                    fontSize: 40,
-                                    opacity: 0.9,
-                                }}>{veggie.emoji}</Text>
-                            </View>
-                        </Animated.View>
-                    );
-                })}
 
                 {currentState === 'recipe' && recipe && (
                     <RecipeReveal

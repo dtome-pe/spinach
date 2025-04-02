@@ -83,7 +83,7 @@ app.get('/spin', async (req, res) => {
         }
 
         const recipe = results[0];
-        console.log('Recipe found:', { id: recipe.id, title: recipe.title });
+        console.log('Recipe found:', { id: recipe.id, title: recipe.title, image: recipe.image });
 
         res.json({
             id: recipe.id,
