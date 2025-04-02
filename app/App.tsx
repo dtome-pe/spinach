@@ -154,6 +154,8 @@ export default function App() {
                     throw new Error('Failed to fetch recipe');
                 }
                 const data = await response.json();
+                console.log('API Response Headers:', response.headers);
+                console.log('API Base URL:', API_CONFIG.baseURL);
                 console.log('Raw recipe data:', JSON.stringify(data, null, 2));
 
                 // Ensure we have an image URL
@@ -162,16 +164,22 @@ export default function App() {
                     throw new Error('Recipe data is missing image URL');
                 }
 
+                console.log('Original image URL:', data.image);
+
                 // Clean up the image URL
                 if (data.image.startsWith('//')) {
                     data.image = 'https:' + data.image;
+                    console.log('Fixed protocol-relative URL:', data.image);
                 } else if (!data.image.startsWith('http')) {
+                    const oldUrl = data.image;
                     data.image = `${API_CONFIG.baseURL}${data.image.startsWith('/') ? '' : '/'}${data.image}`;
+                    console.log('Converted relative URL:', oldUrl, 'to:', data.image);
                 }
 
-                console.log('Final image URL:', data.image);
+                console.log('Final processed image URL:', data.image);
                 
                 setRecipe(data);
+                console.log('Setting recipe state with image URL:', data.image);
                 setShowRecipe(true);
                 setCurrentState('recipe');
 
