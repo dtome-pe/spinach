@@ -2,10 +2,32 @@ import { StyleSheet, Dimensions, Platform } from 'react-native';
 
 const { width, height } = Dimensions.get('window');
 
+// Define a color palette for consistent use across the app
+const COLORS = {
+  background: '#f0fdf4',        // Light green background
+  primary: '#16a34a',           // Primary green 
+  primaryDark: '#166534',       // Dark green for text
+  secondaryBg: '#dcfce7',       // Secondary background/highlight
+  text: '#166534',              // Main text color (dark green)
+  textLight: '#374151',         // Secondary text color (gray)
+  white: '#ffffff',
+  buttonBackground: 'rgba(22, 163, 74, 0.1)', // Transparent green for buttons
+  shadow: '#000000',            // Shadow color
+};
+
+// Define consistent font sizes
+const FONTS = {
+  title: 28,
+  subtitle: 24,
+  medium: 18,
+  body: 16,
+  small: 14,
+};
+
 export const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f0fdf4',
+    backgroundColor: COLORS.background,
   },
   mainContent: {
     flex: 1,
@@ -26,25 +48,26 @@ export const styles = StyleSheet.create({
     marginLeft: 8,
   },
   logoText: {
-    fontSize: 28,
+    fontSize: FONTS.title,
     fontWeight: 'bold',
+    color: COLORS.primaryDark,
   },
   logoUnderline: {
     width: 60,
     height: 4,
-    backgroundColor: '#16a34a',
+    backgroundColor: COLORS.primary,
     marginTop: 4,
     borderRadius: 2,
   },
   tagline: {
-    fontSize: 18,
-    color: '#166534',
+    fontSize: FONTS.medium,
+    color: COLORS.text,
     textAlign: 'center',
     marginBottom: height * 0.05,
   },
   taglineHighlight: {
     fontWeight: 'bold',
-    color: '#16a34a',
+    color: COLORS.primary,
   },
   spinButtonContainer: {
     position: 'relative',
@@ -60,7 +83,7 @@ export const styles = StyleSheet.create({
     height: '100%',
     borderRadius: 100,
     borderWidth: 2,
-    borderColor: '#16a34a',
+    borderColor: COLORS.primary,
     opacity: 0.7,
   },
   decorativeCircleInner: {
@@ -69,7 +92,7 @@ export const styles = StyleSheet.create({
     height: '80%',
     borderRadius: 80,
     borderWidth: 2,
-    borderColor: '#166534',
+    borderColor: COLORS.primaryDark,
     opacity: 1,
   },
   spinButtonWrapper: {
@@ -82,7 +105,7 @@ export const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
     borderRadius: 100,
-    backgroundColor: '#16a34a',
+    backgroundColor: COLORS.primary,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -96,14 +119,14 @@ export const styles = StyleSheet.create({
     alignItems: 'center',
   },
   spinButtonText: {
-    color: 'white',
-    fontSize: 24,
+    color: COLORS.white,
+    fontSize: FONTS.subtitle,
     fontWeight: 'bold',
     marginLeft: 4,
   },
   footerText: {
-    fontSize: 14,
-    color: '#166534',
+    fontSize: FONTS.small,
+    color: COLORS.text,
     textAlign: 'center',
     marginTop: height * 0.05,
     marginBottom: height * 0.05,
@@ -113,7 +136,7 @@ export const styles = StyleSheet.create({
     top: Platform.OS === 'ios' ? 50 : 20,
     right: 20,
     padding: 10,
-    backgroundColor: 'rgba(22, 163, 74, 0.1)',
+    backgroundColor: COLORS.buttonBackground,
     borderRadius: 20,
     zIndex: 999,
     ...Platform.select({
@@ -127,7 +150,7 @@ export const styles = StyleSheet.create({
     top: Platform.OS === 'ios' ? 50 : 20,
     left: 20,
     padding: 10,
-    backgroundColor: 'rgba(22, 163, 74, 0.1)',
+    backgroundColor: COLORS.buttonBackground,
     borderRadius: 20,
     zIndex: 999,
     ...Platform.select({
@@ -141,7 +164,7 @@ export const styles = StyleSheet.create({
     top: Platform.OS === 'ios' ? 50 : 20,
     left: 20,
     padding: 10,
-    backgroundColor: 'rgba(22, 163, 74, 0.1)',
+    backgroundColor: COLORS.buttonBackground,
     borderRadius: 20,
     zIndex: 999,
     ...Platform.select({
@@ -154,34 +177,34 @@ export const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     padding: 20,
-    backgroundColor: '#f0fdf4',
+    backgroundColor: COLORS.background,
     borderBottomWidth: 1,
-    borderBottomColor: '#dcfce7',
+    borderBottomColor: COLORS.secondaryBg,
   },
   settingsHeaderTitle: {
-    fontSize: 20,
+    fontSize: FONTS.subtitle,
     fontWeight: 'bold',
-    color: '#166534',
+    color: COLORS.text,
     marginLeft: 10,
   },
   backButton: {
     padding: 5,
   },
   settingsSection: {
-    backgroundColor: 'white',
+    backgroundColor: COLORS.white,
     borderRadius: 12,
     padding: 16,
     marginBottom: 20,
-    shadowColor: '#000',
+    shadowColor: COLORS.shadow,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
   },
   settingsTitle: {
-    fontSize: 18,
+    fontSize: FONTS.medium,
     fontWeight: 'bold',
-    color: '#166534',
+    color: COLORS.text,
     marginBottom: 16,
   },
   settingRow: {
@@ -190,18 +213,18 @@ export const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 8,
     borderBottomWidth: 1,
-    borderBottomColor: '#f0fdf4',
+    borderBottomColor: COLORS.background,
   },
   settingLabel: {
-    fontSize: 16,
-    color: '#166534',
+    fontSize: FONTS.body,
+    color: COLORS.text,
   },
   numberInput: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   numberButton: {
-    backgroundColor: '#16a34a',
+    backgroundColor: COLORS.primary,
     width: 30,
     height: 30,
     borderRadius: 15,
@@ -209,25 +232,25 @@ export const styles = StyleSheet.create({
     alignItems: 'center',
   },
   numberButtonText: {
-    color: 'white',
-    fontSize: 18,
+    color: COLORS.white,
+    fontSize: FONTS.medium,
     fontWeight: 'bold',
   },
   numberValue: {
-    fontSize: 16,
-    color: '#166534',
+    fontSize: FONTS.body,
+    color: COLORS.text,
     marginHorizontal: 15,
     minWidth: 30,
     textAlign: 'center',
   },
   recipeCard: {
     flex: 1,
-    backgroundColor: 'white',
+    backgroundColor: COLORS.background,
     borderRadius: 16,
     margin: 16,
     padding: 16,
     elevation: 4,
-    shadowColor: '#000',
+    shadowColor: COLORS.shadow,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
@@ -238,14 +261,15 @@ export const styles = StyleSheet.create({
     marginBottom: 4,
   },
   recipeTitleHighlight: {
-    fontSize: 24,
+    fontSize: FONTS.subtitle,
     fontWeight: 'bold',
-    color: '#16a34a',
+    color: COLORS.primary,
   },
   recipeTitle: {
-    fontSize: 24,
+    fontSize: FONTS.subtitle,
     fontWeight: 'bold',
-    color: '#166534',
+    color: COLORS.text,
+    textAlign: 'center',
   },
   recipeMetaContainer: {
     flexDirection: 'row',
@@ -260,43 +284,44 @@ export const styles = StyleSheet.create({
     gap: 4,
   },
   recipeMetaText: {
-    fontSize: 14,
-    color: '#16a34a',
+    fontSize: FONTS.small,
+    color: COLORS.primary,
   },
-  recipeDescription: {
-    fontSize: 16,
-    color: '#374151',
+  // Recipe detail description
+  recipeDetailDescription: {
+    fontSize: FONTS.body,
+    color: COLORS.textLight,
     lineHeight: 24,
   },
   ingredientsContainer: {
     gap: 8,
   },
   ingredientsTitle: {
-    fontSize: 20,
+    fontSize: FONTS.subtitle,
     fontWeight: '600',
-    color: '#15803d',
+    color: COLORS.primary,
     marginBottom: 8,
   },
   ingredient: {
-    fontSize: 16,
-    color: '#374151',
+    fontSize: FONTS.body,
+    color: COLORS.textLight,
     lineHeight: 22,
   },
   ecoTipContainer: {
-    backgroundColor: '#f0fdf4',
+    backgroundColor: COLORS.background,
     padding: 16,
     borderRadius: 8,
     marginTop: 8,
   },
   ecoTipTitle: {
-    fontSize: 16,
+    fontSize: FONTS.body,
     fontWeight: '600',
-    color: '#15803d',
+    color: COLORS.primary,
     marginBottom: 4,
   },
   ecoTipText: {
-    fontSize: 14,
-    color: '#15803d',
+    fontSize: FONTS.small,
+    color: COLORS.primary,
     lineHeight: 20,
   },
   allergenLabelContainer: {
@@ -315,8 +340,8 @@ export const styles = StyleSheet.create({
     borderWidth: 2,
   },
   allergenButtonInclude: {
-    borderColor: '#16a34a',
-    backgroundColor: '#f0fdf4',
+    borderColor: COLORS.primary,
+    backgroundColor: COLORS.background,
   },
   allergenButtonExclude: {
     borderColor: '#dc2626',
@@ -324,7 +349,7 @@ export const styles = StyleSheet.create({
   },
   recipeRevealContainer: {
     flex: 1,
-    backgroundColor: '#f0fdf4',
+    backgroundColor: COLORS.background,
   },
   recipeImage: {
     width: '100%',
@@ -333,16 +358,12 @@ export const styles = StyleSheet.create({
   recipeContent: {
     padding: 24,
     alignItems: 'center',
+    backgroundColor: COLORS.background,
   },
-  recipeTitle: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#166534',
-    textAlign: 'center',
-  },
+  // Recipe card description
   recipeDescription: {
-    fontSize: 16,
-    color: '#166534',
+    fontSize: FONTS.body,
+    color: COLORS.text,
     textAlign: 'center',
     marginTop: 8,
   },
@@ -360,16 +381,16 @@ export const styles = StyleSheet.create({
     alignItems: 'center',
   },
   resetButton: {
-    backgroundColor: '#16a34a',
+    backgroundColor: COLORS.primary,
     marginRight: 12,
   },
   cookButton: {
-    backgroundColor: '#166534',
+    backgroundColor: COLORS.primaryDark,
     marginLeft: 12,
   },
   recipeButtonText: {
-    color: 'white',
-    fontSize: 18,
+    color: COLORS.white,
+    fontSize: FONTS.medium,
     fontWeight: 'bold',
   },
 });
