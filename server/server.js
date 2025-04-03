@@ -3,6 +3,7 @@ import express from 'express';
 import dotenv from 'dotenv';
 import cors from 'cors';
 import axios from 'axios';
+import serverlessExpress from '@vendia/serverless-express';
 import { mockSpinResponse, mockCookResponse } from './mockData.js';
 import os from 'os';
 
@@ -21,6 +22,7 @@ app.use(express.json());
 
 const PORT = process.env.PORT || 3001;
 const SPOONACULAR_API_KEY = process.env.SPOONACULAR_API_KEY;
+const LAMBDA = process.env.LAMBDA === 'true';
 const TEST_MODE = process.env.TEST_MODE === 'true';
 
 // Log the current mode
@@ -147,11 +149,16 @@ app.get('/test', (req, res) => {
   });
 });
 
-// Start the server
-app.listen(PORT, '0.0.0.0', () => {
-    console.log(`🚀 Server running on http://localhost:${PORT}`);
-    console.log(`💻 For devices on your network, use http://${getLocalIpAddress()}:${PORT}`);
-});
+// ✅ Mode: Local development
+if (!LAMBDA) {
+    app.listen(PORT, () => {
+      console.log(`🚀 Local server running at http://localhost:${PORT}`);
+      console.log(`💻 On network: http://${getLocalIpAddress()}:${PORT}`);
+    });
+  }
+  
+// ✅ Mode: AWS Lambda
+export const handler = LAMBDA ? serverlessExpress({ app }) : undefined;
 
 // Helper function to get the local IP address
 function getLocalIpAddress() {

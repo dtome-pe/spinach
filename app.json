@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "spinach",
-    "slug": "spinach",
+    "slug": "recipe_app",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -19,7 +19,7 @@
       "bundleIdentifier": "com.spinach.app"
     },
     "android": {
-      "package": "com.dtomepe.recipe_app",
+      "package": "com.tonelo.spinach",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
@@ -37,6 +37,7 @@
     },
     "plugins": [
       "expo-router"
-    ]
+    ],
+    "owner": "tonelo"
   }
 }

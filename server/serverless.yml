@@ -1,0 +1,16 @@
+service: spinach-api
+org: tonelo
+app: spinach-app
+
+provider:
+  name: aws
+  runtime: nodejs18.x
+  region: eu-west-3
+
+functions:
+  api:
+    handler: server.handler
+    events:
+      - http:
+          path: /{proxy+}
+          method: any

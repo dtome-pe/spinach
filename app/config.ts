@@ -5,7 +5,6 @@ import { BACKEND_URL } from '@env';
 // Debug logging
 console.log('Raw BACKEND_URL from env:', BACKEND_URL);
 console.log('Platform:', Platform.OS);
-console.log('Constants.appOwnership:', Constants.appOwnership);
 
 // When testing on a physical device with Expo Go
 // We need to use the special Expo URL format to bypass some mobile restrictions
