@@ -119,6 +119,8 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({
     );
 };
 
+export default RecipeCard;
+
 const styles = StyleSheet.create({
     card: {
         width: SCREEN_WIDTH,

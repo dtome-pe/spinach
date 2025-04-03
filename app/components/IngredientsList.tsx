@@ -6,9 +6,6 @@ import {
     TouchableOpacity,
     Share,
     StyleSheet,
-    TextStyle,
-    ViewStyle,
-    StyleProp,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { decimalToFraction } from '../utils/recipeUtils';
@@ -49,6 +46,22 @@ interface IngredientsListProps {
     onServingsChange: (newServings: number) => void;
     onStartSteps: () => void;
 }
+
+// Define colors here to match the app-wide colors
+const COLORS = {
+    background: '#f0fdf4',        // Light green background
+    primary: '#16a34a',           // Primary green 
+    primaryDark: '#166534',       // Dark green for text
+    secondaryBg: '#dcfce7',       // Secondary background/highlight
+    text: '#166534',              // Main text color (dark green)
+    textLight: '#374151',         // Secondary text color (gray)
+    white: '#ffffff',             // White color
+};
+
+// Font sizes
+const FONTS = {
+    body: 16,
+};
 
 export const IngredientsList: React.FC<IngredientsListProps> = ({
     recipe,
@@ -167,7 +180,7 @@ Get Spinach App to start cooking delicious plant-based recipes today!`;
                     style={styles.toggleAllButton}
                     onPress={toggleAllIngredients}
                 >
-                    <Text style={{ color: COLORS.primary, fontSize: appStyles.body, fontWeight: '600' }}>
+                    <Text style={{ color: COLORS.primary, fontSize: FONTS.body, fontWeight: '600' }}>
                         {checkedIngredients.size === ingredients.length ? 'Uncheck All' : 'Check All'}
                     </Text>
                 </TouchableOpacity>
@@ -211,19 +224,8 @@ Get Spinach App to start cooking delicious plant-based recipes today!`;
     );
 };
 
-// Define colors here to match the app-wide colors
-const COLORS = {
-    background: '#f0fdf4',        // Light green background
-    primary: '#16a34a',           // Primary green 
-    primaryDark: '#166534',       // Dark green for text
-    secondaryBg: '#dcfce7',       // Secondary background/highlight
-    text: '#166534',              // Main text color (dark green)
-    textLight: '#374151',         // Secondary text color (gray)
-    white: '#ffffff',             // White color
-};
-
 // Keep only the local styles that aren't already in the app styles
-const styles = {
+const styles = StyleSheet.create({
     titleContainer: {
         padding: 20,
         borderBottomWidth: 1,
@@ -301,6 +303,6 @@ const styles = {
         textDecorationLine: 'line-through',
         color: '#999',
     },
-};
+});
 
 export default IngredientsList; 

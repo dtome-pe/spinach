@@ -308,4 +308,5 @@ const styles = StyleSheet.create({
     },
 });
 
+// Add default export for Expo Router compatibility
 export default Settings; 
