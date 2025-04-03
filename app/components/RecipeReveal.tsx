@@ -6,11 +6,26 @@ import {
     Image,
     TouchableOpacity,
     Dimensions,
+    Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { styles as appStyles } from '../styles';
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const IMAGE_HEIGHT = SCREEN_WIDTH * 0.75;
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
+// Set image height to be at most 1/3 of the screen height with padding
+const IMAGE_HEIGHT = Math.min(SCREEN_WIDTH * 0.6, SCREEN_HEIGHT * 0.3);
+const IMAGE_WIDTH = SCREEN_WIDTH - 40; // Adding padding of 20 on each side
+
+// Define colors here to match the app-wide colors
+const COLORS = {
+    background: '#f0fdf4',        // Light green background
+    primary: '#16a34a',           // Primary green 
+    primaryDark: '#166534',       // Dark green for text
+    secondaryBg: '#dcfce7',       // Secondary background/highlight
+    text: '#166534',              // Main text color (dark green)
+    textLight: '#374151',         // Secondary text color (gray)
+    white: '#ffffff',             // White color
+};
 
 interface RecipeRevealProps {
     recipe: {
@@ -35,43 +50,34 @@ export const RecipeReveal: React.FC<RecipeRevealProps> = ({
     
     return (
         <View style={styles.container}>
-            <View style={styles.imageContainer}>
-                <Image 
-                    source={{ uri: recipe.image }} 
-                    style={styles.image}
-                    resizeMode="cover"
-                    onError={(error) => {
-                        console.error('Image loading error in RecipeReveal:', error.nativeEvent);
-                        console.log('Failed to load image URL:', recipe.image);
-                        console.log('Image dimensions:', {
-                            width: SCREEN_WIDTH,
-                            height: IMAGE_HEIGHT
-                        });
-                    }}
-                    onLoad={() => {
-                        console.log('Image loaded successfully in RecipeReveal:', recipe.image);
-                        console.log('Image dimensions:', {
-                            width: SCREEN_WIDTH,
-                            height: IMAGE_HEIGHT
-                        });
-                    }}
-                />
-            </View>
-            <View style={styles.content}>
+            <View style={styles.contentContainer}>
                 <Text style={styles.title}>{recipe.title}</Text>
+                
+                <View style={styles.imageContainer}>
+                    <Image 
+                        source={{ uri: recipe.image }} 
+                        style={styles.image}
+                        resizeMode="cover"
+                        onError={(error) => {
+                            console.error('Image loading error in RecipeReveal:', error.nativeEvent);
+                            console.log('Failed to load image URL:', recipe.image);
+                        }}
+                    />
+                </View>
+                
                 <View style={styles.buttonContainer}>
                     <TouchableOpacity
                         style={[styles.button, styles.tryAnotherButton]}
                         onPress={onTryAnother}
                     >
-                        <Ionicons name="refresh" size={24} color="#007AFF" />
+                        <Ionicons name="refresh" size={24} color={COLORS.primary} />
                         <Text style={styles.tryAnotherButtonText}>Try Another</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
                         style={[styles.button, styles.startCookingButton]}
                         onPress={onStartCooking}
                     >
-                        <Ionicons name="restaurant" size={24} color="#fff" />
+                        <Ionicons name="restaurant" size={24} color={COLORS.white} />
                         <Text style={styles.startCookingButtonText}>Start Cooking</Text>
                     </TouchableOpacity>
                 </View>
@@ -85,62 +91,70 @@ export default RecipeReveal;
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#fff',
-        marginTop: 160,
+        backgroundColor: COLORS.background,
+        width: '100%',
+        paddingTop: Platform.OS === 'ios' ? 45 : 35, // Slightly less space at the top
     },
-    imageContainer: {
-        width: SCREEN_WIDTH,
-        height: IMAGE_HEIGHT,
-        backgroundColor: '#f3f4f6',
-        overflow: 'hidden',
-        position: 'relative',
-    },
-    image: {
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        width: SCREEN_WIDTH,
-        height: IMAGE_HEIGHT,
-        backgroundColor: '#f3f4f6',
-    },
-    content: {
+    contentContainer: {
         flex: 1,
-        padding: 20,
+        alignItems: 'center',
+        paddingHorizontal: 20,
+        justifyContent: 'flex-start', // Align content from top instead of center
+        paddingTop: 30, // Add some padding at the top
     },
     title: {
-        fontSize: 24,
+        fontSize: 28,
         fontWeight: 'bold',
-        marginBottom: 10,
-        color: '#333',
+        marginBottom: 30, // More space between title and image
+        color: COLORS.primaryDark,
+        textAlign: 'center',
+    },
+    imageContainer: {
+        width: IMAGE_WIDTH,
+        height: IMAGE_HEIGHT * 1.2, // Slightly larger image
+        borderRadius: 15,
+        overflow: 'hidden',
+        marginBottom: 35, // More space before buttons
+        borderWidth: 1,
+        borderColor: COLORS.secondaryBg,
+    },
+    image: {
+        width: '100%',
+        height: '100%',
+        backgroundColor: COLORS.secondaryBg,
     },
     buttonContainer: {
         flexDirection: 'row',
         justifyContent: 'space-between',
-        marginTop: 'auto',
-        paddingBottom: 20,
+        width: '100%',
+        marginTop: 15,
+        marginBottom: 20,
     },
     button: {
         flexDirection: 'row',
         alignItems: 'center',
+        justifyContent: 'center',
         padding: 15,
         borderRadius: 10,
         flex: 1,
         marginHorizontal: 5,
     },
     tryAnotherButton: {
-        backgroundColor: '#f0f0f0',
+        backgroundColor: COLORS.secondaryBg,
+        borderWidth: 1,
+        borderColor: COLORS.primary,
     },
     startCookingButton: {
-        backgroundColor: '#007AFF',
+        backgroundColor: COLORS.primary,
     },
     tryAnotherButtonText: {
-        color: '#007AFF',
+        color: COLORS.primary,
         fontSize: 16,
         fontWeight: '600',
         marginLeft: 8,
     },
     startCookingButtonText: {
-        color: '#fff',
+        color: COLORS.white,
         fontSize: 16,
         fontWeight: '600',
         marginLeft: 8,

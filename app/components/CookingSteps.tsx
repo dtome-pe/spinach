@@ -20,6 +20,17 @@ import { GestureDetector, Gesture } from 'react-native-gesture-handler';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
+// Define colors here to match the app-wide colors
+const COLORS = {
+    background: '#f0fdf4',        // Light green background
+    primary: '#16a34a',           // Primary green 
+    primaryDark: '#166534',       // Dark green for text
+    secondaryBg: '#dcfce7',       // Secondary background/highlight
+    text: '#166534',              // Main text color (dark green)
+    textLight: '#374151',         // Secondary text color (gray)
+    white: '#ffffff',             // White color
+};
+
 interface Step {
     number: number;
     step: string;
@@ -117,38 +128,14 @@ export const CookingSteps: React.FC<CookingStepsProps> = ({ steps, onComplete, o
         setTimeout(onComplete, 500);
     };
 
-    const handleNextStep = () => {
-        if (currentStep < steps.length - 1) {
-            translateY.value = withSequence(
-                withTiming(-20, { duration: 100 }),
-                withTiming(0, { duration: 100 })
-            );
-            opacity.value = withSequence(
-                withTiming(0, { duration: 100 }),
-                withTiming(1, { duration: 100 })
-            );
-            setCurrentStep(prev => prev + 1);
-        }
-    };
-
-    const handlePreviousStep = () => {
-        if (currentStep > 0) {
-            translateY.value = withSequence(
-                withTiming(20, { duration: 100 }),
-                withTiming(0, { duration: 100 })
-            );
-            opacity.value = withSequence(
-                withTiming(0, { duration: 100 }),
-                withTiming(1, { duration: 100 })
-            );
-            setCurrentStep(prev => prev - 1);
-        } else {
-            onBack();
-        }
-    };
-
     return (
         <View style={styles.container}>
+            {currentStep > 0 && (
+                <View style={styles.upSwipeIndicator}>
+                    <Ionicons name="chevron-up" size={24} color="rgba(22, 101, 52, 0.4)" />
+                </View>
+            )}
+            
             <GestureDetector gesture={panGesture}>
                 <Animated.View style={[styles.stepCard, cardStyle]}>
                     <View style={styles.stepNumber}>
@@ -157,23 +144,6 @@ export const CookingSteps: React.FC<CookingStepsProps> = ({ steps, onComplete, o
                     <Text style={styles.stepText}>{steps[currentStep].step}</Text>
                 </Animated.View>
             </GestureDetector>
-
-            <View style={styles.navigationButtons}>
-                <TouchableOpacity
-                    style={[styles.navButton, currentStep === 0 && styles.navButtonDisabled]}
-                    onPress={handlePreviousStep}
-                    disabled={currentStep === 0}
-                >
-                    <Ionicons name="chevron-up" size={24} color={currentStep === 0 ? "#ccc" : "#007AFF"} />
-                </TouchableOpacity>
-                <TouchableOpacity
-                    style={[styles.navButton, currentStep === steps.length - 1 && styles.navButtonDisabled]}
-                    onPress={handleNextStep}
-                    disabled={currentStep === steps.length - 1}
-                >
-                    <Ionicons name="chevron-down" size={24} color={currentStep === steps.length - 1 ? "#ccc" : "#007AFF"} />
-                </TouchableOpacity>
-            </View>
 
             {currentStep === steps.length - 1 && (
                 <TouchableOpacity
@@ -184,10 +154,14 @@ export const CookingSteps: React.FC<CookingStepsProps> = ({ steps, onComplete, o
                 </TouchableOpacity>
             )}
 
-            <View style={styles.swipeIndicator}>
-                <Ionicons name="chevron-down" size={24} color="rgba(0,0,0,0.3)" />
-                <Text style={styles.swipeText}>Swipe or tap arrows to navigate</Text>
-            </View>
+            {currentStep < steps.length - 1 && (
+                <View style={styles.swipeIndicator}>
+                    <Ionicons name="chevron-down" size={24} color="rgba(22, 101, 52, 0.4)" />
+                    {currentStep === 0 && (
+                        <Text style={styles.swipeText}>Swipe to navigate</Text>
+                    )}
+                </View>
+            )}
         </View>
     );
 };
@@ -198,84 +172,82 @@ export default CookingSteps;
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#fff',
+        backgroundColor: COLORS.background,
+        paddingTop: Platform.OS === 'ios' ? 50 : 40,
     },
     stepCard: {
-        height: SCREEN_HEIGHT * 0.7,
+        height: SCREEN_HEIGHT * 0.65,
         margin: 20,
         padding: 20,
-        backgroundColor: '#fff',
+        backgroundColor: COLORS.white,
         borderRadius: 20,
         shadowColor: '#000',
         shadowOffset: {
             width: 0,
             height: 2,
         },
-        shadowOpacity: 0.25,
+        shadowOpacity: 0.15,
         shadowRadius: 3.84,
         elevation: 5,
-        justifyContent: 'center',
-        alignItems: 'center',
+        justifyContent: 'flex-start',
+        alignItems: 'flex-start',
     },
     stepNumber: {
         width: 40,
         height: 40,
         borderRadius: 20,
-        backgroundColor: '#007AFF',
+        backgroundColor: COLORS.primary,
         justifyContent: 'center',
         alignItems: 'center',
         marginBottom: 20,
     },
     stepNumberText: {
-        color: '#fff',
+        color: COLORS.white,
         fontSize: 20,
         fontWeight: 'bold',
     },
     stepText: {
-        fontSize: 24,
-        textAlign: 'center',
-        lineHeight: 36,
-        color: '#333',
-    },
-    navigationButtons: {
-        position: 'absolute',
-        right: 20,
-        top: '50%',
-        transform: [{ translateY: -50 }],
-        alignItems: 'center',
-    },
-    navButton: {
-        padding: 10,
-        marginVertical: 5,
-        backgroundColor: 'rgba(0, 122, 255, 0.1)',
-        borderRadius: 20,
-    },
-    navButtonDisabled: {
-        backgroundColor: 'rgba(0, 0, 0, 0.05)',
+        fontSize: 22,
+        textAlign: 'left',
+        lineHeight: 32,
+        color: COLORS.textLight,
     },
     completeButton: {
-        backgroundColor: '#007AFF',
-        padding: 20,
-        borderRadius: 10,
-        margin: 20,
-        alignItems: 'center',
+        backgroundColor: COLORS.primary,
+        paddingVertical: 16,
+        paddingHorizontal: 30,
+        borderRadius: 25,
+        alignSelf: 'center',
+        marginTop: 20,
+        shadowColor: '#000',
+        shadowOffset: {
+            width: 0,
+            height: 2,
+        },
+        shadowOpacity: 0.2,
+        shadowRadius: 3.84,
+        elevation: 5,
     },
     completeButtonText: {
-        color: '#fff',
-        fontSize: 24,
+        color: COLORS.white,
+        fontSize: 18,
         fontWeight: 'bold',
     },
     swipeIndicator: {
-        position: 'absolute',
-        bottom: 20,
-        left: 0,
-        right: 0,
+        flexDirection: 'column',
+        justifyContent: 'center',
         alignItems: 'center',
-        opacity: 0.7,
+        marginTop: 30,
     },
     swipeText: {
-        color: 'rgba(0,0,0,0.3)',
-        fontSize: 14,
         marginTop: 5,
+        fontSize: 14,
+        color: COLORS.textLight,
+    },
+    upSwipeIndicator: {
+        flexDirection: 'column',
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginBottom: 10,
     },
 }); 

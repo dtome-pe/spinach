@@ -35,10 +35,11 @@ interface SettingsProps {
     visible: boolean;
     onClose: () => void;
     onSave: (settings: UserSettings) => void;
+    initialSettings?: UserSettings;
 }
 
-export const Settings: React.FC<SettingsProps> = ({ visible, onClose, onSave }) => {
-    const [settings, setSettings] = useState<UserSettings>({
+export const Settings: React.FC<SettingsProps> = ({ visible, onClose, onSave, initialSettings }) => {
+    const [settings, setSettings] = useState<UserSettings>(initialSettings || {
         useMetric: true,
         maxCookingTime: 60,
         allergens: {
@@ -54,8 +55,12 @@ export const Settings: React.FC<SettingsProps> = ({ visible, onClose, onSave }) 
     });
 
     useEffect(() => {
-        loadSettings();
-    }, []);
+        if (initialSettings) {
+            setSettings(initialSettings);
+        } else {
+            loadSettings();
+        }
+    }, [initialSettings]);
 
     const loadSettings = async () => {
         try {
@@ -85,6 +90,25 @@ export const Settings: React.FC<SettingsProps> = ({ visible, onClose, onSave }) 
                 [allergen]: !prev.allergens[allergen]
             }
         }));
+    };
+
+    const toggleMetricSystem = async (value: boolean) => {
+        // Update the local state
+        const updatedSettings = {
+            ...settings,
+            useMetric: value
+        };
+        setSettings(updatedSettings);
+        
+        // Apply the change immediately
+        onSave(updatedSettings);
+        
+        // Also save to AsyncStorage
+        try {
+            await AsyncStorage.setItem('recipeSettings', JSON.stringify(updatedSettings));
+        } catch (error) {
+            console.error('Error saving settings:', error);
+        }
     };
 
     const updateCookingTime = (type: 'min' | 'max', value: number) => {
@@ -168,7 +192,7 @@ export const Settings: React.FC<SettingsProps> = ({ visible, onClose, onSave }) 
                                     <Text>Use Metric System</Text>
                                     <Switch
                                         value={settings.useMetric}
-                                        onValueChange={(value) => setSettings(prev => ({ ...prev, useMetric: value }))}
+                                        onValueChange={toggleMetricSystem}
                                         trackColor={{ false: '#767577', true: '#81b0ff' }}
                                         thumbColor={settings.useMetric ? '#007AFF' : '#f4f3f4'}
                                     />
