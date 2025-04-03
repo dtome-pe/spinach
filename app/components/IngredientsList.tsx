@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     View,
     Text,
@@ -6,10 +6,12 @@ import {
     TouchableOpacity,
     Share,
     StyleSheet,
+    Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { decimalToFraction } from '../utils/recipeUtils';
 import { styles as appStyles } from '../styles';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface Ingredient {
     id: number;
@@ -45,6 +47,8 @@ interface IngredientsListProps {
     readyInMinutes: number;
     onServingsChange: (newServings: number) => void;
     onStartSteps: () => void;
+    onMetricChange?: (useMetric: boolean) => void;
+    useMetric?: boolean;
 }
 
 // Define colors here to match the app-wide colors
@@ -70,8 +74,68 @@ export const IngredientsList: React.FC<IngredientsListProps> = ({
     readyInMinutes,
     onServingsChange,
     onStartSteps,
+    onMetricChange,
+    useMetric: externalUseMetric,
 }) => {
     const [checkedIngredients, setCheckedIngredients] = useState<Set<number>>(new Set());
+    const [internalUseMetric, setInternalUseMetric] = useState<boolean>(true);
+    const [localIngredients, setLocalIngredients] = useState<Ingredient[]>(ingredients);
+    
+    // Determine which metric value to use - external prop or internal state
+    const useMetric = externalUseMetric !== undefined ? externalUseMetric : internalUseMetric;
+
+    // Load user settings on mount
+    useEffect(() => {
+        if (externalUseMetric === undefined) {
+            loadSettings();
+        }
+    }, [externalUseMetric]);
+
+    // Update local ingredients when props change or measurement system changes
+    useEffect(() => {
+        updateIngredientsDisplay();
+    }, [ingredients, useMetric]);
+
+    const loadSettings = async () => {
+        try {
+            const savedSettings = await AsyncStorage.getItem('recipeSettings');
+            if (savedSettings) {
+                const settings = JSON.parse(savedSettings);
+                if (onMetricChange) {
+                    onMetricChange(settings.useMetric);
+                } else {
+                    setInternalUseMetric(settings.useMetric);
+                }
+            }
+        } catch (error) {
+            console.error('Error loading settings:', error);
+        }
+    };
+
+    const updateIngredientsDisplay = () => {
+        const updatedIngredients = ingredients.map(ingredient => {
+            // Update the measurement system if needed
+            const measureSystem = useMetric ? 'metric' : 'us';
+            
+            // If measurement system changed, update the displayed values
+            let amount = ingredient.amount;
+            let unit = ingredient.unit;
+            
+            if (ingredient.measureSystem !== measureSystem && ingredient.measures) {
+                amount = ingredient.measures[measureSystem]?.amount || amount;
+                unit = ingredient.measures[measureSystem]?.unitShort || unit;
+            }
+            
+            return {
+                ...ingredient,
+                amount,
+                unit,
+                measureSystem
+            };
+        });
+        
+        setLocalIngredients(updatedIngredients);
+    };
 
     const toggleIngredient = (id: number) => {
         setCheckedIngredients(prev => {
@@ -86,10 +150,10 @@ export const IngredientsList: React.FC<IngredientsListProps> = ({
     };
 
     const toggleAllIngredients = () => {
-        if (checkedIngredients.size === ingredients.length) {
+        if (checkedIngredients.size === localIngredients.length) {
             setCheckedIngredients(new Set());
         } else {
-            setCheckedIngredients(new Set(ingredients.map(i => i.id)));
+            setCheckedIngredients(new Set(localIngredients.map(i => i.id)));
         }
     };
 
@@ -118,7 +182,7 @@ export const IngredientsList: React.FC<IngredientsListProps> = ({
     };
 
     const shareShoppingList = () => {
-        const uncheckedIngredients = ingredients
+        const uncheckedIngredients = localIngredients
             .filter(i => !checkedIngredients.has(i.id))
             .map(i => {
                 const formattedAmount = formatAmount(i);
@@ -139,40 +203,49 @@ Get Spinach App to start cooking delicious plant-based recipes today!`;
         });
     };
 
+    // Handle servings change with a max limit of 99
+    const handleServingsDecrease = () => {
+        onServingsChange(Math.max(1, servings - 1));
+    };
+
+    const handleServingsIncrease = () => {
+        // Limit max servings to 99
+        onServingsChange(Math.min(99, servings + 1));
+    };
+
     return (
         <View style={appStyles.container}>
-            <View style={styles.titleContainer}>
+            <View style={[styles.titleContainer, { paddingTop: Platform.OS === 'ios' ? 60 : 50 }]}>
                 <Text style={appStyles.recipeTitle}>{recipe.title}</Text>
             </View>
             <View style={styles.header}>
                 <View style={styles.servingsContainer}>
                     <TouchableOpacity
-                        style={[appStyles.numberButton, { marginRight: 8 }]}
-                        onPress={() => onServingsChange(Math.max(1, servings - 1))}
+                        style={[appStyles.numberButton, { marginRight: 4 }]}
+                        onPress={handleServingsDecrease}
                     >
                         <Text style={appStyles.numberButtonText}>-</Text>
                     </TouchableOpacity>
                     <View style={styles.servingsTextContainer}>
-                        <Ionicons name="people" size={24} color={COLORS.primaryDark} />
-                        <Text style={[appStyles.numberValue, { fontWeight: '600' }]}>{servings}</Text>
+                        <Ionicons name="people" size={20} color={COLORS.primaryDark} />
+                        <Text style={[appStyles.numberValue, { 
+                            fontWeight: '600', 
+                            minWidth: 28, 
+                            marginHorizontal: 4
+                        }]}>{servings}</Text>
                     </View>
                     <TouchableOpacity
-                        style={[appStyles.numberButton, { marginLeft: 8 }]}
-                        onPress={() => onServingsChange(servings + 1)}
+                        style={[appStyles.numberButton, { marginLeft: 4 }]}
+                        onPress={handleServingsIncrease}
                     >
                         <Text style={appStyles.numberButtonText}>+</Text>
                     </TouchableOpacity>
                 </View>
-                <View style={styles.timeContainer}>
+                
+                <View style={[styles.timeContainer, { marginLeft: 'auto' }]}>
                     <Ionicons name="time-outline" size={20} color={COLORS.primaryDark} />
                     <Text style={styles.timeText}>{readyInMinutes} minutes</Text>
                 </View>
-                <TouchableOpacity
-                    style={styles.shareButton}
-                    onPress={shareShoppingList}
-                >
-                    <Ionicons name="share-outline" size={24} color={COLORS.primary} />
-                </TouchableOpacity>
             </View>
 
             <ScrollView style={styles.ingredientsList}>
@@ -181,11 +254,11 @@ Get Spinach App to start cooking delicious plant-based recipes today!`;
                     onPress={toggleAllIngredients}
                 >
                     <Text style={{ color: COLORS.primary, fontSize: FONTS.body, fontWeight: '600' }}>
-                        {checkedIngredients.size === ingredients.length ? 'Uncheck All' : 'Check All'}
+                        {checkedIngredients.size === localIngredients.length ? 'Uncheck All' : 'Check All'}
                     </Text>
                 </TouchableOpacity>
 
-                {ingredients.map(ingredient => (
+                {localIngredients.map(ingredient => (
                     <TouchableOpacity
                         key={ingredient.id}
                         style={[
@@ -212,13 +285,24 @@ Get Spinach App to start cooking delicious plant-based recipes today!`;
                         </Text>
                     </TouchableOpacity>
                 ))}
+
+                {/* Share Shopping List button at the bottom of the ingredients list */}
+                <TouchableOpacity
+                    style={styles.shareListContainer}
+                    onPress={shareShoppingList}
+                >
+                    <View style={styles.shareIconContainer}>
+                        <Ionicons name="share-outline" size={20} color={COLORS.primary} />
+                    </View>
+                    <Text style={styles.shareListText}>Share Shopping List</Text>
+                </TouchableOpacity>
             </ScrollView>
 
             <TouchableOpacity
-                style={[appStyles.recipeButton, appStyles.cookButton, { margin: 20 }]}
+                style={styles.cookButton}
                 onPress={onStartSteps}
             >
-                <Text style={appStyles.recipeButtonText}>Start Cooking</Text>
+                <Text style={styles.cookButtonText}>Start Cooking</Text>
             </TouchableOpacity>
         </View>
     );
@@ -246,7 +330,7 @@ const styles = StyleSheet.create({
     servingsTextContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginHorizontal: 16,
+        marginHorizontal: 8,
     },
     timeContainer: {
         flexDirection: 'row',
@@ -259,9 +343,6 @@ const styles = StyleSheet.create({
     timeText: {
         marginLeft: 4,
         color: COLORS.primaryDark,
-    },
-    shareButton: {
-        padding: 8,
     },
     ingredientsList: {
         flex: 1,
@@ -302,6 +383,42 @@ const styles = StyleSheet.create({
     checkedIngredientText: {
         textDecorationLine: 'line-through',
         color: '#999',
+    },
+    shareListContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        padding: 16,
+        borderBottomWidth: 1,
+        borderBottomColor: COLORS.secondaryBg,
+        marginTop: 8,
+    },
+    shareIconContainer: {
+        width: 24,
+        height: 24,
+        borderRadius: 12,
+        marginRight: 12,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    shareListText: {
+        color: COLORS.primary,
+        fontSize: FONTS.body,
+        fontWeight: '600',
+    },
+    cookButton: {
+        backgroundColor: COLORS.primary,
+        paddingVertical: 12,
+        paddingHorizontal: 24,
+        borderRadius: 25,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginVertical: 12,
+        marginHorizontal: 24,
+    },
+    cookButtonText: {
+        color: COLORS.white,
+        fontSize: 16,
+        fontWeight: '600',
     },
 });
 
