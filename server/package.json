@@ -1,10 +1,11 @@
 {
     "type": "module",
+    "main": "server.js",
     "dependencies": {
-        "dotenv": "^16.4.7",
-        "expo-constants": "^17.0.8",
-        "express": "^4.21.2",
-        "node-cron": "^3.0.3",
-        "node-fetch": "^3.3.2"
+      "express": "^4.21.2",
+      "dotenv": "^16.4.7",
+      "axios": "^1.6.7",
+      "cors": "^2.8.5",
+      "@vendia/serverless-express": "^4.10.2"
     }
-}
+  }
