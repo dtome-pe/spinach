@@ -29,7 +29,7 @@ import { cacheRecipe, getCachedRecipe, getRecentRecipeIds } from './utils/cacheU
 import { TEST_MODE } from '@env';
 
 // Get screen dimensions
-const { width } = Dimensions.get('window');
+const { width, height } = Dimensions.get('window');
 
 type AppState = 'landing' | 'recipe' | 'ingredients' | 'cooking';
 
@@ -291,6 +291,19 @@ export default function App() {
         });
     };
 
+    // Handle metric preferences update from IngredientsList component
+    const handleMetricPreferenceChange = async (useMetric: boolean) => {
+        setSettings(prev => ({
+            ...prev,
+            useMetric
+        }));
+        
+        // Update recipe with new measurement system
+        if (recipe) {
+            setRecipe(adjustServings(recipe, servings, useMetric));
+        }
+    };
+
     const handleHomePress = () => {
         // Reset to landing page
         setCurrentState('landing');
@@ -314,7 +327,7 @@ export default function App() {
                 <>
                     {/* Favorites Button */}
                     <TouchableOpacity
-                        style={[buttonStyle, styles.favoritesButton]}
+                        style={[buttonStyle, { left: 20, top: Platform.OS === 'ios' ? 15 : 5 }]}
                         onPress={() => setShowFavorites(true)}
                     >
                         <Ionicons name="heart" size={24} color="#16a34a" />
@@ -322,7 +335,7 @@ export default function App() {
 
                     {/* Settings Button */}
                     <TouchableOpacity
-                        style={[buttonStyle, styles.settingsButton]}
+                        style={[buttonStyle, { right: 20, top: Platform.OS === 'ios' ? 15 : 5 }]}
                         onPress={() => setShowSettings(true)}
                     >
                         <Feather name="settings" size={24} color="#16a34a" />
@@ -334,7 +347,7 @@ export default function App() {
                 <>
                     {/* Home Button */}
                     <TouchableOpacity
-                        style={[buttonStyle, { left: 20, top: Platform.OS === 'ios' ? 50 : 20 }]}
+                        style={[buttonStyle, { left: 20, top: Platform.OS === 'ios' ? 15 : 5 }]}
                         onPress={handleHomePress}
                     >
                         <Ionicons name="leaf" size={24} color="#16a34a" />
@@ -342,7 +355,7 @@ export default function App() {
 
                     {/* Settings Button */}
                     <TouchableOpacity
-                        style={[buttonStyle, styles.settingsButton]}
+                        style={[buttonStyle, { right: 20, top: Platform.OS === 'ios' ? 15 : 5 }]}
                         onPress={() => setShowSettings(true)}
                     >
                         <Feather name="settings" size={24} color="#16a34a" />
@@ -361,19 +374,19 @@ export default function App() {
                 {/* Landing page content */}
                 {currentState === 'landing' && (
                     <>
-                        <View style={styles.logoContainer}>
+                        <View style={[styles.logoContainer, { marginTop: height * 0.03 }]}>
                             <View style={styles.logoRow}>
                                 <SpinachLogo size="large" />
                             </View>
                         </View>
                         
                         {/* Tagline */}
-                        <Animated.Text style={[styles.tagline, { opacity: contentOpacity }]}>
+                        <Animated.Text style={[styles.tagline, { opacity: contentOpacity, marginBottom: height * 0.04 }]}>
                             Find <Text style={styles.taglineHighlight}>delicious</Text> recipes based on <Text style={styles.taglineHighlight}>what's fresh</Text> today
                         </Animated.Text>
 
                         {/* Spin Button */}
-                        <View style={styles.spinButtonContainer}>
+                        <View style={[styles.spinButtonContainer, { marginTop: 0 }]}>
                             {/* Decorative circles */}
                             <Animated.View style={[
                                 styles.decorativeCircleOuter,
@@ -448,6 +461,8 @@ export default function App() {
                         readyInMinutes={recipe.readyInMinutes}
                         onServingsChange={handleServingsChange}
                         onStartSteps={handleStartSteps}
+                        onMetricChange={handleMetricPreferenceChange}
+                        useMetric={settings.useMetric}
                     />
                 )}
 
@@ -466,8 +481,13 @@ export default function App() {
                         onClose={() => setShowSettings(false)}
                         onSave={(newSettings) => {
                             setSettings(newSettings);
+                            // Update recipe with new measurement system if it changed
+                            if (newSettings.useMetric !== settings.useMetric && recipe) {
+                                setRecipe(adjustServings(recipe, servings, newSettings.useMetric));
+                            }
                             setShowSettings(false);
                         }}
+                        initialSettings={settings}
                     />
                 )}
 
