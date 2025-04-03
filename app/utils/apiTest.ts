@@ -24,11 +24,11 @@ export const testApiConnection = async (): Promise<boolean> => {
     const data = await response.json();
     console.log('✅ Server connection test successful:', data);
     return true;
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('❌ API connection test failed:', error);
     Alert.alert(
       'Connection Error',
-      `Failed to connect to the server. Please check your network configuration.\n\nDetails: ${error.message}`
+      `Failed to connect to the server. Please check your network configuration.\n\nDetails: ${error instanceof Error ? error.message : String(error)}`
     );
     return false;
   }

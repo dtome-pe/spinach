@@ -51,7 +51,7 @@ export const processRecipeData = (recipe: Recipe, useMetric: boolean = true) => 
         steps: instruction.steps.map((step, index) => ({
             number: step.number || index + 1,
             step: step.step,
-            ingredients: (step.ingredients || []).map(ingredient => {
+            ingredients: (step.ingredients || []).map((ingredient: any) => {
                 const converted = convertUnits(
                     ingredient.amount || 0,
                     (ingredient.unit || '').toLowerCase(),
@@ -66,7 +66,7 @@ export const processRecipeData = (recipe: Recipe, useMetric: boolean = true) => 
                     originalUnit: ingredient.unit,
                 };
             }),
-            equipment: (step.equipment || []).map(equipment => ({
+            equipment: (step.equipment || []).map((equipment: any) => ({
                 ...equipment,
                 temperature: equipment.temperature ? {
                     ...equipment.temperature,

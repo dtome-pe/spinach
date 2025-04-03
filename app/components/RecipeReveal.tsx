@@ -5,6 +5,7 @@ import {
     Image,
     TouchableOpacity,
     Dimensions,
+    StyleSheet,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { styles as appStyles } from '../styles';
