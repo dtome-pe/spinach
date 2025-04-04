@@ -41,3 +41,4 @@ app-example
 android/
 ios/
 app/env.d.ts
+server/.serverless
