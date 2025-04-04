@@ -91,7 +91,7 @@
       "Properties": {
         "Code": {
           "S3Bucket": "serverless-framework-deployments-eu-west-3-01d943f1-da5b",
-          "S3Key": "serverless/spinach-api/dev/1743696457318-2025-04-03T16:07:37.318Z/spinach-api.zip"
+          "S3Key": "serverless/spinach-api/dev/1743761734614-2025-04-04T10:15:34.614Z/spinach-api.zip"
         },
         "Handler": "server.handler",
         "Runtime": "nodejs18.x",
@@ -109,14 +109,14 @@
         "ApiLogGroup"
       ]
     },
-    "ApiLambdaVersionI8PHl3RNNpnJ3nVKwteDojNa62ayksbQihn93wIoCE": {
+    "ApiLambdaVersionESCWS0BKooZXgL8oIzOVFTv4XTRkLSOAmAsCDPSUk": {
       "Type": "AWS::Lambda::Version",
       "DeletionPolicy": "Retain",
       "Properties": {
         "FunctionName": {
           "Ref": "ApiLambdaFunction"
         },
-        "CodeSha256": "ctm3iodokmR2FUD16aOpAOwC8TGiie+JfBXgBsdy/1o="
+        "CodeSha256": "dD470Y9rQrOppnJnPnIqHccPmnrCpGv4206YP2tQ6Go="
       }
     },
     "ApiGatewayRestApi": {
@@ -192,7 +192,7 @@
         "ApiLambdaPermissionApiGateway"
       ]
     },
-    "ApiGatewayDeployment1743696450734": {
+    "ApiGatewayDeployment1743761726570": {
       "Type": "AWS::ApiGateway::Deployment",
       "Properties": {
         "RestApiId": {
@@ -252,7 +252,7 @@
     "ApiLambdaFunctionQualifiedArn": {
       "Description": "Current Lambda function version",
       "Value": {
-        "Ref": "ApiLambdaVersionI8PHl3RNNpnJ3nVKwteDojNa62ayksbQihn93wIoCE"
+        "Ref": "ApiLambdaVersionESCWS0BKooZXgL8oIzOVFTv4XTRkLSOAmAsCDPSUk"
       },
       "Export": {
         "Name": "sls-spinach-api-dev-ApiLambdaFunctionQualifiedArn"
