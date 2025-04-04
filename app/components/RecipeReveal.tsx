@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import {
     View,
     Text,
@@ -7,6 +7,7 @@ import {
     TouchableOpacity,
     Dimensions,
     Platform,
+    BackHandler,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { styles as appStyles } from '../styles';
@@ -39,13 +40,24 @@ interface RecipeRevealProps {
     };
     onTryAnother: () => void;
     onStartCooking: () => void;
+    onBack: () => void;
 }
 
 export const RecipeReveal: React.FC<RecipeRevealProps> = ({
     recipe,
     onTryAnother,
     onStartCooking,
+    onBack,
 }) => {
+    useEffect(() => {
+        const backHandler = BackHandler.addEventListener('hardwareBackPress', () => {
+            onBack();
+            return true; // Prevent default back behavior
+        });
+
+        return () => backHandler.remove(); // Cleanup on unmount
+    }, [onBack]);
+
     console.log('RecipeReveal rendering with image URL:', recipe.image);
     
     return (

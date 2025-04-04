@@ -450,6 +450,10 @@ export default function App() {
                         recipe={recipe}
                         onTryAnother={handleSpin}
                         onStartCooking={handleStartCooking}
+                        onBack={() => {
+                            setCurrentState('landing' as AppState);
+                            setShowRecipe(false);
+                        }}
                     />
                 )}
 
