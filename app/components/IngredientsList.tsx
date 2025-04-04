@@ -258,9 +258,9 @@ Get Spinach App to start cooking delicious plant-based recipes today!`;
                     </Text>
                 </TouchableOpacity>
 
-                {localIngredients.map(ingredient => (
+                {localIngredients.map((ingredient, index) => (
                     <TouchableOpacity
-                        key={ingredient.id}
+                        key={`ingredient-${ingredient.id}-${index}`}
                         style={[
                             styles.ingredientItem,
                             checkedIngredients.has(ingredient.id) && styles.checkedIngredient
