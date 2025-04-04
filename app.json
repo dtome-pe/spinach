@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "spinach",
-    "slug": "spinach",
+    "slug": "recipe_app",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -16,7 +16,10 @@
     ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.spinach.app"
+      "bundleIdentifier": "com.spinach.app",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "package": "com.dtomepe.recipe_app",
@@ -37,6 +40,7 @@
     },
     "plugins": [
       "expo-router"
-    ]
+    ],
+    "owner": "tonelo"
   }
 }
