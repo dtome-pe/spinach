@@ -15,6 +15,10 @@ import { Ionicons } from '@expo/vector-icons';
 
 const { width, height } = Dimensions.get('window');
 
+// Set image height to be at most 1/3 of the screen height with padding
+const IMAGE_HEIGHT = Math.min(width * 0.6, height * 0.3);
+const IMAGE_WIDTH = width - 40; // Adding padding of 20 on each side
+
 // Define colors here to match the app-wide colors
 const COLORS = {
     background: '#f0fdf4',        // Light green background

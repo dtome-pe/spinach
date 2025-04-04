@@ -88,7 +88,6 @@ export default function App() {
             }
             return false;
         });
-
         return () => backHandler.remove();
     }, [currentState]);
 
@@ -451,6 +450,7 @@ export default function App() {
                     position: 'absolute',
                     top: Platform.OS === 'ios' ? height * 0.05 : height * 0.03
                 }}>
+
                     {/* History Button */}
                     <TouchableOpacity
                         style={[buttonStyle, { left: 0 }]}
