@@ -21,12 +21,12 @@ import { RecipeReveal } from './components/RecipeReveal';
 import { Settings, UserSettings } from './components/Settings';
 import { IngredientsList } from './components/IngredientsList';
 import { CookingSteps } from './components/CookingSteps';
-import { Favorites } from './components/Favorites';
+import { History } from './components/History';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Recipe, processRecipeData, adjustServings } from './utils/recipeUtils';
 import { API_CONFIG } from './config';
 import { testApiConnection } from './utils/apiTest';
-import { cacheRecipe, getCachedRecipe, getRecentRecipeIds } from './utils/cacheUtils';
+import { cacheRecipe, getCachedRecipe, getRecentRecipeIds, clearRecipeCache } from './utils/cacheUtils';
 import { TEST_MODE } from '@env';
 
 // Get screen dimensions
@@ -54,7 +54,7 @@ export default function App() {
         }
     });
     const [showSettings, setShowSettings] = useState(false);
-    const [showFavorites, setShowFavorites] = useState(false);
+    const [showHistory, setShowHistory] = useState(false);
     const [servings, setServings] = useState(4);
 
     const spinAnim = useRef(new Animated.Value(0)).current;
@@ -71,11 +71,11 @@ export default function App() {
         loadSettings();
         
         // Test API connection on startup
-        testApiConnection().then(success => {
-            if (success) {
-                console.log('✅ Ready to fetch recipes!');
-            }
-        });
+        //testApiConnection().then(success => {
+        //    if (success) {
+        //        console.log('✅ Ready to fetch recipes!');
+        //    }
+        //});
 
         // Add back button handler
         const backHandler = BackHandler.addEventListener('hardwareBackPress', () => {
@@ -88,7 +88,6 @@ export default function App() {
             }
             return false;
         });
-
         return () => backHandler.remove();
     }, [currentState]);
 
@@ -104,7 +103,6 @@ export default function App() {
     };
 
     const handleSpin = async () => {
-        console.log('🎲 SPIN button pressed');
         if (isSpinning) return;
         setIsSpinning(true);
         setShowRecipe(false);
@@ -123,10 +121,17 @@ export default function App() {
             })
         ]).start(async () => {
             try {
-                // Test the API connection before making the actual request
-                const connectionSuccess = await testApiConnection();
-                if (!connectionSuccess) {
-                    // If we're offline, try to get a random cached recipe
+                const queryParams = new URLSearchParams({
+                    maxTime: settings.maxCookingTime.toString(),
+                    ...Object.entries(settings.allergens)
+                        .filter(([_, value]) => value)
+                        .map(([key]) => key)
+                        .reduce((acc, key) => ({ ...acc, [key]: 'true' }), {})
+                });
+                
+                const response = await fetch(`${API_CONFIG.baseURL}/spin?${queryParams}`);
+                if (!response.ok) {
+                    // If offline, try to get a random cached recipe
                     try {
                         const recentRecipeIds = await getRecentRecipeIds();
                         if (recentRecipeIds.length > 0) {
@@ -152,60 +157,72 @@ export default function App() {
                         console.error('Error retrieving from cache:', cacheError);
                     }
                     
-                    // If we couldn't get a cached recipe
-                    setIsSpinning(false);
-                    return;
-                }
-
-                const queryParams = new URLSearchParams({
-                    maxTime: settings.maxCookingTime.toString(),
-                    ...Object.entries(settings.allergens)
-                        .filter(([_, value]) => value)
-                        .map(([key]) => key)
-                        .reduce((acc, key) => ({ ...acc, [key]: 'true' }), {})
-                });
-
-                const response = await fetch(`${API_CONFIG.baseURL}/spin?${queryParams}`);
-                if (!response.ok) {
                     throw new Error('Failed to fetch recipe');
                 }
                 const data = await response.json();
-                console.log('API Response Headers:', response.headers);
-                console.log('API Base URL:', API_CONFIG.baseURL);
-                console.log('Raw recipe data:', JSON.stringify(data, null, 2));
 
                 // Ensure we have an image URL
                 if (!data.image) {
-                    console.error('No image URL in recipe data');
                     throw new Error('Recipe data is missing image URL');
                 }
-
-                console.log('Original image URL:', data.image);
 
                 // Clean up the image URL
                 if (data.image.startsWith('//')) {
                     data.image = 'https:' + data.image;
-                    console.log('Fixed protocol-relative URL:', data.image);
                 } else if (!data.image.startsWith('http')) {
-                    const oldUrl = data.image;
                     data.image = `${API_CONFIG.baseURL}${data.image.startsWith('/') ? '' : '/'}${data.image}`;
-                    console.log('Converted relative URL:', oldUrl, 'to:', data.image);
                 }
-
-                console.log('Final processed image URL:', data.image);
                 
                 setRecipe(data);
-                console.log('Setting recipe state with image URL:', data.image);
                 setShowRecipe(true);
                 setCurrentState('recipe');
 
-                // Cache the recipe for offline use
+                // Cache the minimal recipe data from spin endpoint for history
                 if (data) {
-                    cacheRecipe(data);
+                    console.log('\n=== Caching Spin Recipe for History ===');
+                    
+                    // Create a minimal recipe object with just the data we need for history
+                    const minimalRecipe = {
+                        id: data.id,
+                        title: data.title,
+                        image: data.image,
+                        readyInMinutes: data.readyInMinutes,
+                        servings: data.servings,
+                        // Keep empty arrays to satisfy Recipe type
+                        extendedIngredients: [],
+                        analyzedInstructions: [{ steps: [] }],
+                        summary: '',
+                        description: ''
+                    };
+                    
+                    // Get current recipe IDs from cache
+                    const recentRecipeIds = await getRecentRecipeIds();
+                    console.log('Current recipe IDs in cache:', recentRecipeIds);
+                    
+                    // Check if this recipe is already in cache
+                    if (!recentRecipeIds.includes(data.id)) {
+                        console.log('New recipe, adding to cache');
+                        
+                        // If we have 10 recipes, remove the oldest one
+                        if (recentRecipeIds.length >= 10) {
+                            console.log('Cache full, removing oldest recipe');
+                            const oldestId = recentRecipeIds[0];
+                            await AsyncStorage.removeItem(`recipe_${oldestId}`);
+                            // Remove from recent IDs list
+                            recentRecipeIds.shift();
+                        }
+                        
+                        // Add new recipe to cache
+                        await cacheRecipe(minimalRecipe);
+                        console.log('Recipe cached successfully');
+                    } else {
+                        console.log('Recipe already in cache, skipping');
+                    }
+                    console.log('=== End Recipe Caching ===\n');
                 }
             } catch (error) {
                 console.error('Error fetching recipe:', error);
-                Alert.alert('Error', 'Failed to fetch recipe. Please try again.');
+                Alert.alert('Error', 'Failed to fetch recipe. Please check your internet connection and try again.');
             } finally {
                 setIsSpinning(false);
             }
@@ -241,38 +258,55 @@ export default function App() {
         if (!recipe) return;
         
         try {
-            // Check if we have connection
-            const connectionSuccess = await testApiConnection();
+            console.log('\n=== CHECKING CACHE ===');
+            console.log('Recipe ID to check:', recipe.id);
             
-            // If offline, check if we already have the full recipe cached
-            if (!connectionSuccess) {
-                const cachedRecipe = await getCachedRecipe(recipe.id);
-                if (cachedRecipe && cachedRecipe.analyzedInstructions) {
-                    // We have a complete cached recipe
-                    setRecipe(cachedRecipe);
-                    setServings(cachedRecipe.servings);
-                    setCurrentState('ingredients');
-                    return;
-                } else {
-                    Alert.alert(
-                        "Network Required", 
-                        "You need an internet connection to view the full recipe details.",
-                        [{ text: "OK" }]
-                    );
-                    return;
-                }
+            // First, check if we have the full recipe from cook endpoint cached
+            const cachedRecipe = await getCachedRecipe(recipe.id);
+            console.log('Cached recipe found:', !!cachedRecipe);
+            if (cachedRecipe) {
+                console.log('Has analyzedInstructions:', !!cachedRecipe.analyzedInstructions);
+                console.log('Has non-empty analyzedInstructions:', cachedRecipe.analyzedInstructions && cachedRecipe.analyzedInstructions.length > 0);
+                console.log('Has non-empty steps:', cachedRecipe.analyzedInstructions && cachedRecipe.analyzedInstructions[0]?.steps?.length > 0);
             }
             
-            // Fetch from network if we have connection
+            // Only use cache if it has non-empty analyzedInstructions from cook endpoint
+            if (cachedRecipe && cachedRecipe.analyzedInstructions && cachedRecipe.analyzedInstructions[0]?.steps?.length > 0) {
+                console.log('\n=== USING CACHED COOK RECIPE ===');
+                console.log('Recipe ID:', recipe.id);
+                console.log('Recipe Title:', recipe.title);
+                console.log('=== END CACHE LOAD ===\n');
+                
+                setRecipe(cachedRecipe);
+                setServings(cachedRecipe.servings);
+                setCurrentState('ingredients');
+                return;
+            }
+            
+            console.log('\n=== COOK ENDPOINT CALL ===');
+            console.log('URL:', `${API_CONFIG.baseURL}/cook?id=${recipe.id}`);
+            console.log('Recipe ID:', recipe.id);
+            
             const response = await fetch(`${API_CONFIG.baseURL}/cook?id=${recipe.id}`);
             if (!response.ok) {
-                throw new Error('Failed to fetch recipe details');
+                Alert.alert(
+                    "Network Required", 
+                    "You need an internet connection to view the full recipe details.",
+                    [{ text: "OK" }]
+                );
+                return;
             }
             const rawRecipe = await response.json();
+            console.log('=== END COOK CALL ===\n');
+            
             const processedRecipe = processRecipeData(rawRecipe, settings.useMetric);
             
-            // Cache the full recipe
-            cacheRecipe(processedRecipe);
+            // Cache the full recipe from cook endpoint
+            await cacheRecipe(processedRecipe);
+            console.log('\n=== CACHING FULL COOK RECIPE ===');
+            console.log('Recipe ID:', processedRecipe.id);
+            console.log('Recipe Title:', processedRecipe.title);
+            console.log('=== END CACHING ===\n');
             
             setRecipe(processedRecipe);
             setServings(processedRecipe.servings);
@@ -281,7 +315,7 @@ export default function App() {
             console.error('Error fetching recipe details:', error);
             Alert.alert(
                 'Error',
-                'Failed to load recipe details. Please try again.'
+                'Failed to load recipe details. Please check your internet connection and try again.'
             );
         }
     };
@@ -327,6 +361,74 @@ export default function App() {
         setShowRecipe(false);
     };
 
+    const handleHistorySelect = async (selectedRecipe: Recipe) => {
+        setShowHistory(false);
+        
+        try {
+            // First check if we have the full recipe cached
+            const cachedRecipe = await getCachedRecipe(selectedRecipe.id);
+            console.log('\n=== CHECKING CACHE FOR HISTORY SELECTION ===');
+            console.log('Recipe ID to check:', selectedRecipe.id);
+            console.log('Cached recipe found:', !!cachedRecipe);
+            if (cachedRecipe) {
+                console.log('Has analyzedInstructions:', !!cachedRecipe.analyzedInstructions);
+                console.log('Has non-empty steps:', cachedRecipe.analyzedInstructions && cachedRecipe.analyzedInstructions[0]?.steps?.length > 0);
+            }
+            
+            // Only use cache if it has non-empty analyzedInstructions from cook endpoint
+            if (cachedRecipe && cachedRecipe.analyzedInstructions && cachedRecipe.analyzedInstructions[0]?.steps?.length > 0) {
+                console.log('\n=== USING CACHED COOK RECIPE ===');
+                console.log('Recipe ID:', cachedRecipe.id);
+                console.log('Recipe Title:', cachedRecipe.title);
+                console.log('=== END CACHE LOAD ===\n');
+                
+                setRecipe(cachedRecipe);
+                setServings(cachedRecipe.servings);
+                setCurrentState('ingredients');
+                return;
+            }
+            
+            console.log('\n=== COOK ENDPOINT CALL ===');
+            console.log('URL:', `${API_CONFIG.baseURL}/cook?id=${selectedRecipe.id}`);
+            console.log('Recipe ID:', selectedRecipe.id);
+            
+            const response = await fetch(`${API_CONFIG.baseURL}/cook?id=${selectedRecipe.id}`);
+            if (!response.ok) {
+                console.error('Cook endpoint failed:', response.status, response.statusText);
+                throw new Error(`Cook endpoint failed with status ${response.status}`);
+            }
+            const rawRecipe = await response.json();
+            console.log('Response:', rawRecipe);
+            console.log('=== END COOK CALL ===\n');
+            
+            if (!rawRecipe || !rawRecipe.analyzedInstructions || !rawRecipe.analyzedInstructions[0]?.steps) {
+                console.error('Invalid recipe data from cook endpoint:', rawRecipe);
+                throw new Error('Invalid recipe data received from cook endpoint');
+            }
+            
+            const processedRecipe = processRecipeData(rawRecipe, settings.useMetric);
+            
+            // Cache the full recipe from cook endpoint
+            await cacheRecipe(processedRecipe);
+            console.log('\n=== CACHING FULL COOK RECIPE ===');
+            console.log('Recipe ID:', processedRecipe.id);
+            console.log('Recipe Title:', processedRecipe.title);
+            console.log('=== END CACHING ===\n');
+            
+            setRecipe(processedRecipe);
+            setServings(processedRecipe.servings);
+            setCurrentState('ingredients');
+        } catch (error) {
+            console.error('Error in handleHistorySelect:', error);
+            Alert.alert(
+                'Error',
+                'Failed to load recipe details. Please check your internet connection and try again.'
+            );
+            // Reset to landing page on error
+            setCurrentState('landing');
+        }
+    };
+
     // Render the floating action buttons based on current state
     const renderActionButtons = () => {
         // Common button styles
@@ -348,12 +450,13 @@ export default function App() {
                     position: 'absolute',
                     top: Platform.OS === 'ios' ? height * 0.05 : height * 0.03
                 }}>
-                    {/* Favorites Button */}
+
+                    {/* History Button */}
                     <TouchableOpacity
                         style={[buttonStyle, { left: 0 }]}
-                        onPress={() => setShowFavorites(true)}
+                        onPress={() => setShowHistory(true)}
                     >
-                        <Ionicons name="heart" size={24} color="#16a34a" />
+                        <Ionicons name="time" size={24} color="#16a34a" />
                     </TouchableOpacity>
 
                     {/* Settings Button */}
@@ -398,7 +501,7 @@ export default function App() {
     return (
         <SafeAreaView style={styles.container}>
             <View style={styles.mainContent}>
-                {/* Action Buttons (Home/Favorites and Settings) */}
+                {/* Action Buttons (Home/History and Settings) */}
                 {renderActionButtons()}
 
                 {/* Landing page content */}
@@ -530,10 +633,11 @@ export default function App() {
                     />
                 )}
 
-                {showFavorites && (
-                    <Favorites
-                        visible={showFavorites}
-                        onClose={() => setShowFavorites(false)}
+                {showHistory && (
+                    <History
+                        visible={showHistory}
+                        onClose={() => setShowHistory(false)}
+                        onSelectRecipe={handleHistorySelect}
                     />
                 )}
             </View>

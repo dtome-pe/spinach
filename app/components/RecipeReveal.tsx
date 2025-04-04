@@ -12,9 +12,9 @@ import {
     Easing,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { styles as appStyles } from '../styles';
 
 const { width, height } = Dimensions.get('window');
+
 // Set image height to be at most 1/3 of the screen height with padding
 const IMAGE_HEIGHT = Math.min(width * 0.6, height * 0.3);
 const IMAGE_WIDTH = width - 40; // Adding padding of 20 on each side
@@ -83,8 +83,6 @@ export const RecipeReveal: React.FC<RecipeRevealProps> = ({
         inputRange: [0, 1],
         outputRange: ['0deg', '360deg']
     });
-
-    console.log('RecipeReveal rendering with image URL:', recipe.image);
     
     return (
         <View style={styles.container}>
