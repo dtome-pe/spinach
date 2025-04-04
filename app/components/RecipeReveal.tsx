@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import {
     View,
     Text,
@@ -8,6 +8,8 @@ import {
     Dimensions,
     Platform,
     BackHandler,
+    Animated,
+    Easing,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { styles as appStyles } from '../styles';
@@ -38,6 +40,7 @@ interface RecipeRevealProps {
         extendedIngredients: any[];
         analyzedInstructions: { steps: any[] }[];
     };
+    isSpinning: boolean;
     onTryAnother: () => void;
     onStartCooking: () => void;
     onBack: () => void;
@@ -45,18 +48,41 @@ interface RecipeRevealProps {
 
 export const RecipeReveal: React.FC<RecipeRevealProps> = ({
     recipe,
+    isSpinning,
     onTryAnother,
     onStartCooking,
     onBack,
 }) => {
+    const spinValue = useRef(new Animated.Value(0)).current;
+
     useEffect(() => {
         const backHandler = BackHandler.addEventListener('hardwareBackPress', () => {
             onBack();
             return true; // Prevent default back behavior
         });
 
-        return () => backHandler.remove(); // Cleanup on unmount
+        if (isSpinning) {
+            Animated.loop(
+                Animated.timing(spinValue, {
+                    toValue: 1,
+                    duration: 1000,
+                    easing: Easing.linear,
+                    useNativeDriver: true,
+                })
+            ).start();
+        } else {
+            spinValue.setValue(0);
+        }
+
+        return () => {
+            backHandler.remove(); // Cleanup on unmount
+        };
     }, [onBack]);
+
+    const spin = spinValue.interpolate({
+        inputRange: [0, 1],
+        outputRange: ['0deg', '360deg']
+    });
 
     console.log('RecipeReveal rendering with image URL:', recipe.image);
     
@@ -79,11 +105,25 @@ export const RecipeReveal: React.FC<RecipeRevealProps> = ({
                 
                 <View style={styles.buttonContainer}>
                     <TouchableOpacity
-                        style={[styles.button, styles.tryAnotherButton]}
+                        style={[
+                            styles.button, 
+                            styles.tryAnotherButton,
+                            isSpinning && styles.disabledButton
+                        ]}
                         onPress={onTryAnother}
+                        disabled={isSpinning}
                     >
-                        <Ionicons name="refresh" size={24} color={COLORS.primary} />
-                        <Text style={styles.tryAnotherButtonText}>Try Another</Text>
+                        <Animated.View style={{ transform: [{ rotate: spin }] }}>
+                            <Ionicons 
+                                name="refresh" 
+                                size={24} 
+                                color={isSpinning ? COLORS.textLight : COLORS.primary} 
+                            />
+                        </Animated.View>
+                        <Text style={[
+                            styles.tryAnotherButtonText,
+                            isSpinning && styles.disabledButtonText
+                        ]}>Try Another</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
                         style={[styles.button, styles.startCookingButton]}
@@ -170,5 +210,13 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: '600',
         marginLeft: 8,
+    },
+    disabledButton: {
+        opacity: 0.7,
+        backgroundColor: '#e5e7eb', // Light gray background when disabled
+        borderColor: '#9ca3af', // Gray border when disabled
+    },
+    disabledButtonText: {
+        color: '#6b7280', // Gray text when disabled
     },
 }); 

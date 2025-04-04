@@ -89,6 +89,7 @@ export default function App() {
     };
 
     const handleSpin = async () => {
+        console.log('🎲 SPIN button pressed');
         if (isSpinning) return;
         setIsSpinning(true);
         setShowRecipe(false);
@@ -448,7 +449,12 @@ export default function App() {
                 {currentState === 'recipe' && recipe && (
                     <RecipeReveal
                         recipe={recipe}
-                        onTryAnother={handleSpin}
+                        isSpinning={isSpinning}
+                        onTryAnother={() => {
+                            if (isSpinning) return;
+                            console.log('🔄 TRY ANOTHER button pressed');
+                            handleSpin();
+                        }}
                         onStartCooking={handleStartCooking}
                         onBack={() => {
                             setCurrentState('landing' as AppState);
