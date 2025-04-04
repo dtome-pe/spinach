@@ -58,13 +58,11 @@ export const CookingSteps: React.FC<CookingStepsProps> = ({ steps, onComplete, o
         if (currentStep > 0) {
             setCurrentStep(prev => prev - 1);
         } else {
-            onBack();
+            // Directly call onBack for swipe back from first step
+            opacity.value = withTiming(0, { duration: 300 });
+            setTimeout(() => onBack(), 300);
         }
-    }, [currentStep, onBack]);
-
-    const handleBackNavigation = useCallback(() => {
-        onBack();
-    }, [onBack]);
+    }, [currentStep, onBack, opacity]);
 
     const panGesture = Gesture.Pan()
         .onBegin(() => {
@@ -88,22 +86,17 @@ export const CookingSteps: React.FC<CookingStepsProps> = ({ steps, onComplete, o
                 );
                 runOnJS(goToNextStep)();
             } else if (event.translationY > 50) {
-                if (currentStep > 0) {
-                    // Swipe down - previous step
-                    translateY.value = withSequence(
-                        withTiming(20, { duration: 100 }),
-                        withTiming(0, { duration: 100 })
-                    );
-                    opacity.value = withSequence(
-                        withTiming(0, { duration: 100 }),
-                        withTiming(1, { duration: 100 })
-                    );
-                    runOnJS(goToPreviousStep)();
-                } else {
-                    // Swipe down at first step - go back
-                    opacity.value = withTiming(0, { duration: 300 });
-                    setTimeout(() => runOnJS(handleBackNavigation)(), 300);
-                }
+                // For both previous step and back, use the same function
+                // which will decide what to do based on currentStep
+                translateY.value = withSequence(
+                    withTiming(20, { duration: 100 }),
+                    withTiming(0, { duration: 100 })
+                );
+                opacity.value = withSequence(
+                    withTiming(0, { duration: 100 }),
+                    withTiming(1, { duration: 100 })
+                );
+                runOnJS(goToPreviousStep)();
             } else {
                 // If the swipe wasn't significant, spring back to center
                 translateY.value = withSpring(0);
