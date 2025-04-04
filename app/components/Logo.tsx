@@ -18,6 +18,8 @@ export const SpinachLogo: React.FC<LogoProps> = ({ size = 'default' }) => {
     };
 
     const currentSize = sizes[size];
+    const baseColor = '#16a34a';
+    const spinColor = '#15803d'; // A slightly darker green for SPIN
 
     return (
         <View style={styles.logoContainer}>
@@ -26,17 +28,19 @@ export const SpinachLogo: React.FC<LogoProps> = ({ size = 'default' }) => {
                     styles.logoText,
                     {
                         fontSize: currentSize.fontSize,
-                        color: '#16a34a',
                         letterSpacing: 1,
                     }
-                ]}>SPINACH</Text>
+                ]}>
+                    <Text style={{ color: spinColor }}>SPIN</Text>
+                    <Text style={{ color: baseColor }}>ACH</Text>
+                </Text>
             </View>
             <View style={[
                 styles.logoUnderline,
                 {
                     width: '100%',
                     height: 3,
-                    backgroundColor: '#16a34a',
+                    backgroundColor: baseColor,
                     marginTop: 4,
                     borderRadius: 2,
                     opacity: 0.8,
