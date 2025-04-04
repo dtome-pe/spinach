@@ -3,13 +3,14 @@ import Constants from 'expo-constants';
 import { BACKEND_URL } from '@env';
 
 // Debug logging
+const backendWithoutTrailingSlash = process.env.BACKEND_URL?.replace(/\/+$/, '');
 console.log('Raw BACKEND_URL from env:', BACKEND_URL);
 console.log('Platform:', Platform.OS);
 
 // When testing on a physical device with Expo Go
 // We need to use the special Expo URL format to bypass some mobile restrictions
 const DEFAULT_URL = 'http://192.168.2.100:3001';
-const DEV_SERVER_URL = BACKEND_URL || DEFAULT_URL;
+const DEV_SERVER_URL = backendWithoutTrailingSlash || DEFAULT_URL;
 
 // Log the server URL being used
 console.log('DEV_SERVER_URL:', DEV_SERVER_URL);
