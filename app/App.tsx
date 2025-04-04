@@ -11,6 +11,7 @@ import {
     StyleSheet,
     Platform,
     ViewStyle,
+    BackHandler,
 } from 'react-native';
 import { Svg, Circle, Path } from 'react-native-svg';
 import { Feather, Ionicons } from '@expo/vector-icons';
@@ -75,7 +76,21 @@ export default function App() {
                 console.log('✅ Ready to fetch recipes!');
             }
         });
-    }, []);
+
+        // Add back button handler
+        const backHandler = BackHandler.addEventListener('hardwareBackPress', () => {
+            if (currentState === 'ingredients') {
+                setCurrentState('recipe');
+                return true;
+            } else if (currentState === 'cooking') {
+                setCurrentState('ingredients');
+                return true;
+            }
+            return false;
+        });
+
+        return () => backHandler.remove();
+    }, [currentState]);
 
     const loadSettings = async () => {
         try {
@@ -325,10 +340,17 @@ export default function App() {
 
         if (currentState === 'landing') {
             return (
-                <>
+                <View style={{ 
+                    flexDirection: 'row', 
+                    justifyContent: 'space-between', 
+                    width: '100%', 
+                    paddingHorizontal: width * 0.05,
+                    position: 'absolute',
+                    top: Platform.OS === 'ios' ? height * 0.05 : height * 0.03
+                }}>
                     {/* Favorites Button */}
                     <TouchableOpacity
-                        style={[buttonStyle, { left: 20, top: Platform.OS === 'ios' ? 15 : 5 }]}
+                        style={[buttonStyle, { left: 0 }]}
                         onPress={() => setShowFavorites(true)}
                     >
                         <Ionicons name="heart" size={24} color="#16a34a" />
@@ -336,19 +358,26 @@ export default function App() {
 
                     {/* Settings Button */}
                     <TouchableOpacity
-                        style={[buttonStyle, { right: 20, top: Platform.OS === 'ios' ? 15 : 5 }]}
+                        style={[buttonStyle, { right: 0 }]}
                         onPress={() => setShowSettings(true)}
                     >
                         <Feather name="settings" size={24} color="#16a34a" />
                     </TouchableOpacity>
-                </>
+                </View>
             );
         } else {
             return (
-                <>
+                <View style={{ 
+                    flexDirection: 'row', 
+                    justifyContent: 'space-between', 
+                    width: '100%', 
+                    paddingHorizontal: width * 0.05,
+                    position: 'absolute',
+                    top: Platform.OS === 'ios' ? height * 0.05 : height * 0.03
+                }}>
                     {/* Home Button */}
                     <TouchableOpacity
-                        style={[buttonStyle, { left: 20, top: Platform.OS === 'ios' ? 15 : 5 }]}
+                        style={[buttonStyle, { left: 0 }]}
                         onPress={handleHomePress}
                     >
                         <Ionicons name="leaf" size={24} color="#16a34a" />
@@ -356,12 +385,12 @@ export default function App() {
 
                     {/* Settings Button */}
                     <TouchableOpacity
-                        style={[buttonStyle, { right: 20, top: Platform.OS === 'ios' ? 15 : 5 }]}
+                        style={[buttonStyle, { right: 0 }]}
                         onPress={() => setShowSettings(true)}
                     >
                         <Feather name="settings" size={24} color="#16a34a" />
                     </TouchableOpacity>
-                </>
+                </View>
             );
         }
     };

@@ -14,10 +14,10 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { styles as appStyles } from '../styles';
 
-const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
+const { width, height } = Dimensions.get('window');
 // Set image height to be at most 1/3 of the screen height with padding
-const IMAGE_HEIGHT = Math.min(SCREEN_WIDTH * 0.6, SCREEN_HEIGHT * 0.3);
-const IMAGE_WIDTH = SCREEN_WIDTH - 40; // Adding padding of 20 on each side
+const IMAGE_HEIGHT = Math.min(width * 0.6, height * 0.3);
+const IMAGE_WIDTH = width - 40; // Adding padding of 20 on each side
 
 // Define colors here to match the app-wide colors
 const COLORS = {
@@ -145,28 +145,28 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: COLORS.background,
         width: '100%',
-        paddingTop: Platform.OS === 'ios' ? 45 : 35, // Slightly less space at the top
+        paddingTop: Platform.OS === 'ios' ? height * 0.05 : height * 0.03,
     },
     contentContainer: {
         flex: 1,
         alignItems: 'center',
-        paddingHorizontal: 20,
-        justifyContent: 'flex-start', // Align content from top instead of center
-        paddingTop: 30, // Add some padding at the top
+        paddingHorizontal: width * 0.05,
+        justifyContent: 'center',
     },
     title: {
-        fontSize: 28,
+        fontSize: width * 0.07,
         fontWeight: 'bold',
-        marginBottom: 30, // More space between title and image
+        marginBottom: height * 0.04,
         color: COLORS.primaryDark,
         textAlign: 'center',
+        paddingHorizontal: width * 0.05,
     },
     imageContainer: {
-        width: IMAGE_WIDTH,
-        height: IMAGE_HEIGHT * 1.2, // Slightly larger image
-        borderRadius: 15,
+        width: width * 0.9,
+        height: height * 0.3,
+        borderRadius: width * 0.04,
         overflow: 'hidden',
-        marginBottom: 35, // More space before buttons
+        marginBottom: height * 0.05,
         borderWidth: 1,
         borderColor: COLORS.secondaryBg,
     },
@@ -177,19 +177,18 @@ const styles = StyleSheet.create({
     },
     buttonContainer: {
         flexDirection: 'row',
-        justifyContent: 'space-between',
+        justifyContent: 'center',
         width: '100%',
-        marginTop: 15,
-        marginBottom: 20,
+        paddingHorizontal: width * 0.05,
+        gap: width * 0.03,
     },
     button: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        padding: 15,
-        borderRadius: 10,
-        flex: 1,
-        marginHorizontal: 5,
+        padding: width * 0.04,
+        borderRadius: width * 0.03,
+        minWidth: width * 0.35,
     },
     tryAnotherButton: {
         backgroundColor: COLORS.secondaryBg,
@@ -201,22 +200,22 @@ const styles = StyleSheet.create({
     },
     tryAnotherButtonText: {
         color: COLORS.primary,
-        fontSize: 16,
+        fontSize: width * 0.04,
         fontWeight: '600',
-        marginLeft: 8,
+        marginLeft: width * 0.02,
     },
     startCookingButtonText: {
         color: COLORS.white,
-        fontSize: 16,
+        fontSize: width * 0.04,
         fontWeight: '600',
-        marginLeft: 8,
+        marginLeft: width * 0.02,
     },
     disabledButton: {
         opacity: 0.7,
-        backgroundColor: '#e5e7eb', // Light gray background when disabled
-        borderColor: '#9ca3af', // Gray border when disabled
+        backgroundColor: '#e5e7eb',
+        borderColor: '#9ca3af',
     },
     disabledButtonText: {
-        color: '#6b7280', // Gray text when disabled
+        color: '#6b7280',
     },
 }); 
