@@ -8,6 +8,11 @@ const KEYS = {
   MAX_CACHE_SIZE: 10, // Maximum number of recipes to cache
 };
 
+interface CachedRecipe {
+  recipe: Recipe;
+  timestamp: number;
+}
+
 /**
  * Save a recipe to local cache
  * @param recipe The recipe to cache
@@ -16,10 +21,15 @@ export const cacheRecipe = async (recipe: Recipe): Promise<void> => {
   try {
     if (!recipe || !recipe.id) return;
     
-    // Cache the recipe data
+    // Cache the recipe data with timestamp
+    const cachedRecipe: CachedRecipe = {
+      recipe,
+      timestamp: Date.now()
+    };
+    
     await AsyncStorage.setItem(
       `${KEYS.RECIPE_CACHE}${recipe.id}`, 
-      JSON.stringify(recipe)
+      JSON.stringify(cachedRecipe)
     );
     
     // Update the recent recipes list
@@ -40,7 +50,7 @@ export const cacheRecipe = async (recipe: Recipe): Promise<void> => {
       }
     }
     
-    // Save the updated list
+    // Save the updated list 
     await AsyncStorage.setItem(
       KEYS.RECENT_RECIPES,
       JSON.stringify(recentRecipes)
@@ -53,13 +63,38 @@ export const cacheRecipe = async (recipe: Recipe): Promise<void> => {
 /**
  * Retrieve a recipe from cache by ID
  * @param id Recipe ID
- * @returns The cached recipe or null if not found
+ * @returns The cached recipe or null if not found or cache expired
  */
 export const getCachedRecipe = async (id: number): Promise<Recipe | null> => {
   try {
-    const recipeJson = await AsyncStorage.getItem(`${KEYS.RECIPE_CACHE}${id}`);
-    if (recipeJson) {
-      return JSON.parse(recipeJson);
+    const cachedData = await AsyncStorage.getItem(`${KEYS.RECIPE_CACHE}${id}`);
+    if (cachedData) {
+      const { recipe, timestamp }: CachedRecipe = JSON.parse(cachedData);
+      
+      // Check if cache is expired (1 hour)
+      const now = Date.now();
+      const oneHourInMs = 60 * 60 * 1000;
+      const timeElapsed = now - timestamp;
+      const timeLeftInMs = oneHourInMs - timeElapsed;
+      
+      // Log cache access information only in development
+      if (__DEV__) {
+        console.log(`[Recipe Cache] Accessing recipe ${id} at ${new Date(now).toISOString()}`);
+        console.log(`[Recipe Cache] Recipe was cached at ${new Date(timestamp).toISOString()}`);
+        console.log(`[Recipe Cache] Time left in cache: ${Math.floor(timeLeftInMs / 1000 / 60)} minutes and ${Math.floor((timeLeftInMs / 1000) % 60)} seconds`);
+      }
+      
+      if (timeLeftInMs > 0) {
+        return recipe;
+      }
+      
+      // Cache expired, remove it
+      if (__DEV__) {
+        console.log(`[Recipe Cache] Cache expired for recipe ${id}`);
+      }
+      await AsyncStorage.removeItem(`${KEYS.RECIPE_CACHE}${id}`);
+    } else if (__DEV__) {
+      console.log(`[Recipe Cache] No cache found for recipe ${id}`);
     }
     return null;
   } catch (error) {
