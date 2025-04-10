@@ -7,11 +7,23 @@ import {
     Share,
     StyleSheet,
     Platform,
+    Dimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { decimalToFraction } from '../utils/recipeUtils';
 import { styles as appStyles } from '../styles';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { GestureDetector, Gesture } from 'react-native-gesture-handler';
+import Animated, {
+    useAnimatedStyle,
+    useSharedValue,
+    withSpring,
+    withTiming,
+    runOnJS,
+} from 'react-native-reanimated';
+
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const SWIPE_THRESHOLD = SCREEN_WIDTH * 0.25;
 
 interface Ingredient {
     id: number;
@@ -49,6 +61,7 @@ interface IngredientsListProps {
     onStartSteps: () => void;
     onMetricChange?: (useMetric: boolean) => void;
     useMetric?: boolean;
+    onBack?: () => void;
 }
 
 // Define colors here to match the app-wide colors
@@ -76,6 +89,7 @@ export const IngredientsList: React.FC<IngredientsListProps> = ({
     onStartSteps,
     onMetricChange,
     useMetric: externalUseMetric,
+    onBack,
 }) => {
     const [checkedIngredients, setCheckedIngredients] = useState<Set<number>>(new Set());
     const [internalUseMetric, setInternalUseMetric] = useState<boolean>(true);
@@ -213,98 +227,129 @@ Get Spinach App to start cooking delicious plant-based recipes today!`;
         onServingsChange(Math.min(99, servings + 1));
     };
 
+    const translateX = useSharedValue(0);
+    const opacity = useSharedValue(1);
+
+    const panGesture = Gesture.Pan()
+        .onBegin(() => {
+            translateX.value = 0;
+        })
+        .onUpdate((event) => {
+            if (event.translationX > -20) {
+                translateX.value = event.translationX;
+            }
+        })
+        .onEnd((event) => {
+            if (event.translationX > SWIPE_THRESHOLD && onBack) {
+                translateX.value = withTiming(SCREEN_WIDTH, { duration: 300 });
+                opacity.value = withTiming(0, { duration: 300 });
+                runOnJS(onBack)();
+            } else {
+                translateX.value = withSpring(0);
+            }
+        });
+
+    const cardStyle = useAnimatedStyle(() => {
+        return {
+            transform: [{ translateX: translateX.value }],
+            opacity: opacity.value,
+        };
+    });
+
     return (
-        <View style={appStyles.container}>
-            <View style={[styles.titleContainer, { paddingTop: Platform.OS === 'ios' ? 60 : 50 }]}>
-                <Text style={appStyles.recipeTitle}>{recipe.title}</Text>
-            </View>
-            <View style={styles.header}>
-                <View style={styles.servingsContainer}>
-                    <TouchableOpacity
-                        style={[appStyles.numberButton, { marginRight: 4 }]}
-                        onPress={handleServingsDecrease}
-                    >
-                        <Text style={appStyles.numberButtonText}>-</Text>
-                    </TouchableOpacity>
-                    <View style={styles.servingsTextContainer}>
-                        <Ionicons name="people" size={20} color={COLORS.primaryDark} />
-                        <Text style={[appStyles.numberValue, { 
-                            fontWeight: '600', 
-                            minWidth: 28, 
-                            marginHorizontal: 4
-                        }]}>{servings}</Text>
-                    </View>
-                    <TouchableOpacity
-                        style={[appStyles.numberButton, { marginLeft: 4 }]}
-                        onPress={handleServingsIncrease}
-                    >
-                        <Text style={appStyles.numberButtonText}>+</Text>
-                    </TouchableOpacity>
+        <GestureDetector gesture={panGesture}>
+            <Animated.View style={[appStyles.container, cardStyle]}>
+                <View style={[styles.titleContainer, { paddingTop: Platform.OS === 'ios' ? 60 : 50 }]}>
+                    <Text style={appStyles.recipeTitle}>{recipe.title}</Text>
                 </View>
-                
-                <View style={[styles.timeContainer, { marginLeft: 'auto' }]}>
-                    <Ionicons name="time-outline" size={20} color={COLORS.primaryDark} />
-                    <Text style={styles.timeText}>{readyInMinutes} minutes</Text>
-                </View>
-            </View>
-
-            <ScrollView style={styles.ingredientsList}>
-                <TouchableOpacity
-                    style={styles.toggleAllButton}
-                    onPress={toggleAllIngredients}
-                >
-                    <Text style={{ color: COLORS.primary, fontSize: FONTS.body, fontWeight: '600' }}>
-                        {checkedIngredients.size === localIngredients.length ? 'Uncheck All' : 'Check All'}
-                    </Text>
-                </TouchableOpacity>
-
-                {localIngredients.map((ingredient, index) => (
-                    <TouchableOpacity
-                        key={`ingredient-${ingredient.id}-${index}`}
-                        style={[
-                            styles.ingredientItem,
-                            checkedIngredients.has(ingredient.id) && styles.checkedIngredient
-                        ]}
-                        onPress={() => toggleIngredient(ingredient.id)}
-                    >
-                        <View style={[
-                            styles.ingredientCheckbox,
-                            { borderColor: COLORS.primary },
-                            checkedIngredients.has(ingredient.id) && styles.checkedIngredientCheckbox
-                        ]}>
-                            {checkedIngredients.has(ingredient.id) && (
-                                <Ionicons name="checkmark" size={20} color="#999" />
-                            )}
+                <View style={styles.header}>
+                    <View style={styles.servingsContainer}>
+                        <TouchableOpacity
+                            style={[appStyles.numberButton, { marginRight: 4 }]}
+                            onPress={handleServingsDecrease}
+                        >
+                            <Text style={appStyles.numberButtonText}>-</Text>
+                        </TouchableOpacity>
+                        <View style={styles.servingsTextContainer}>
+                            <Ionicons name="people" size={20} color={COLORS.primaryDark} />
+                            <Text style={[appStyles.numberValue, { 
+                                fontWeight: '600', 
+                                minWidth: 28, 
+                                marginHorizontal: 4
+                            }]}>{servings}</Text>
                         </View>
-                        <Text style={[
-                            styles.ingredientText,
-                            { color: COLORS.textLight },
-                            checkedIngredients.has(ingredient.id) && styles.checkedIngredientText
-                        ]}>
-                            {formatAmount(ingredient)}{formatUnit(ingredient.unit) ? ' ' + formatUnit(ingredient.unit) : ''} {ingredient.name}
+                        <TouchableOpacity
+                            style={[appStyles.numberButton, { marginLeft: 4 }]}
+                            onPress={handleServingsIncrease}
+                        >
+                            <Text style={appStyles.numberButtonText}>+</Text>
+                        </TouchableOpacity>
+                    </View>
+                    
+                    <View style={[styles.timeContainer, { marginLeft: 'auto' }]}>
+                        <Ionicons name="time-outline" size={20} color={COLORS.primaryDark} />
+                        <Text style={styles.timeText}>{readyInMinutes} minutes</Text>
+                    </View>
+                </View>
+
+                <ScrollView style={styles.ingredientsList}>
+                    <TouchableOpacity
+                        style={styles.toggleAllButton}
+                        onPress={toggleAllIngredients}
+                    >
+                        <Text style={{ color: COLORS.primary, fontSize: FONTS.body, fontWeight: '600' }}>
+                            {checkedIngredients.size === localIngredients.length ? 'Uncheck All' : 'Check All'}
                         </Text>
                     </TouchableOpacity>
-                ))}
 
-                {/* Share Shopping List button at the bottom of the ingredients list */}
+                    {localIngredients.map((ingredient, index) => (
+                        <TouchableOpacity
+                            key={`ingredient-${ingredient.id}-${index}`}
+                            style={[
+                                styles.ingredientItem,
+                                checkedIngredients.has(ingredient.id) && styles.checkedIngredient
+                            ]}
+                            onPress={() => toggleIngredient(ingredient.id)}
+                        >
+                            <View style={[
+                                styles.ingredientCheckbox,
+                                { borderColor: COLORS.primary },
+                                checkedIngredients.has(ingredient.id) && styles.checkedIngredientCheckbox
+                            ]}>
+                                {checkedIngredients.has(ingredient.id) && (
+                                    <Ionicons name="checkmark" size={20} color="#999" />
+                                )}
+                            </View>
+                            <Text style={[
+                                styles.ingredientText,
+                                { color: COLORS.textLight },
+                                checkedIngredients.has(ingredient.id) && styles.checkedIngredientText
+                            ]}>
+                                {formatAmount(ingredient)}{formatUnit(ingredient.unit) ? ' ' + formatUnit(ingredient.unit) : ''} {ingredient.name}
+                            </Text>
+                        </TouchableOpacity>
+                    ))}
+
+                    {/* Share Shopping List button at the bottom of the ingredients list */}
+                    <TouchableOpacity
+                        style={styles.shareListContainer}
+                        onPress={shareShoppingList}
+                    >
+                        <View style={styles.shareIconContainer}>
+                            <Ionicons name="share-outline" size={20} color={COLORS.primary} />
+                        </View>
+                        <Text style={styles.shareListText}>Share Shopping List</Text>
+                    </TouchableOpacity>
+                </ScrollView>
+
                 <TouchableOpacity
-                    style={styles.shareListContainer}
-                    onPress={shareShoppingList}
+                    style={styles.cookButton}
+                    onPress={onStartSteps}
                 >
-                    <View style={styles.shareIconContainer}>
-                        <Ionicons name="share-outline" size={20} color={COLORS.primary} />
-                    </View>
-                    <Text style={styles.shareListText}>Share Shopping List</Text>
+                    <Text style={styles.cookButtonText}>Start Cooking</Text>
                 </TouchableOpacity>
-            </ScrollView>
-
-            <TouchableOpacity
-                style={styles.cookButton}
-                onPress={onStartSteps}
-            >
-                <Text style={styles.cookButtonText}>Start Cooking</Text>
-            </TouchableOpacity>
-        </View>
+            </Animated.View>
+        </GestureDetector>
     );
 };
 

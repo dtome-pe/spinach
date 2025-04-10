@@ -8,12 +8,21 @@ import {
     Dimensions,
     Platform,
     BackHandler,
-    Animated,
     Easing,
+    Animated as RNAnimated,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { GestureDetector, Gesture } from 'react-native-gesture-handler';
+import Animated, {
+    useAnimatedStyle,
+    useSharedValue,
+    withSpring,
+    withTiming,
+    runOnJS,
+} from 'react-native-reanimated';
 
-const { width, height } = Dimensions.get('window');
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
+const SWIPE_THRESHOLD = SCREEN_WIDTH * 0.25;
 
 // Define colors here to match the app-wide colors
 const COLORS = {
@@ -49,7 +58,9 @@ export const RecipeReveal: React.FC<RecipeRevealProps> = ({
     onStartCooking,
     onBack,
 }) => {
-    const spinValue = useRef(new Animated.Value(0)).current;
+    const spinValue = useRef(new RNAnimated.Value(0)).current;
+    const translateX = useSharedValue(0);
+    const opacity = useSharedValue(1);
 
     useEffect(() => {
         const backHandler = BackHandler.addEventListener('hardwareBackPress', () => {
@@ -58,8 +69,8 @@ export const RecipeReveal: React.FC<RecipeRevealProps> = ({
         });
 
         if (isSpinning) {
-            Animated.loop(
-                Animated.timing(spinValue, {
+            RNAnimated.loop(
+                RNAnimated.timing(spinValue, {
                     toValue: 1,
                     duration: 1000,
                     easing: Easing.linear,
@@ -79,56 +90,84 @@ export const RecipeReveal: React.FC<RecipeRevealProps> = ({
         inputRange: [0, 1],
         outputRange: ['0deg', '360deg']
     });
-    
+
+    const panGesture = Gesture.Pan()
+        .onBegin(() => {
+            translateX.value = 0;
+        })
+        .onUpdate((event) => {
+            if (event.translationX > -20) {
+                translateX.value = event.translationX;
+            }
+        })
+        .onEnd((event) => {
+            if (event.translationX > SWIPE_THRESHOLD && onBack) {
+                translateX.value = withTiming(SCREEN_WIDTH, { duration: 300 });
+                opacity.value = withTiming(0, { duration: 300 });
+                runOnJS(onBack)();
+            } else {
+                translateX.value = withSpring(0);
+            }
+        });
+
+    const cardStyle = useAnimatedStyle(() => {
+        return {
+            transform: [{ translateX: translateX.value }],
+            opacity: opacity.value,
+        };
+    });
+
     return (
-        <View style={styles.container}>
-            <View style={styles.contentContainer}>
-                <Text style={styles.title}>{recipe.title}</Text>
-                
-                <View style={styles.imageContainer}>
-                    <Image 
-                        source={{ uri: recipe.image }} 
-                        style={styles.image}
-                        resizeMode="cover"
-                        onError={(error) => {
-                            console.error('Image loading error in RecipeReveal:', error.nativeEvent);
-                            console.log('Failed to load image URL:', recipe.image);
-                        }}
-                    />
+        <GestureDetector gesture={panGesture}>
+            <Animated.View style={[styles.container, cardStyle]}>
+                <View style={styles.contentContainer}>
+                    <Text style={styles.title}>{recipe.title}</Text>
+                    
+                    <View style={styles.imageContainer}>
+                        <Image 
+                            source={{ uri: recipe.image }} 
+                            style={styles.image}
+                            resizeMode="cover"
+                            onError={(error) => {
+                                console.error('Image loading error in RecipeReveal:', error.nativeEvent);
+                                console.log('Failed to load image URL:', recipe.image);
+                            }}
+                        />
+                    </View>
+                    
+                    <View style={styles.buttonContainer}>
+                        <TouchableOpacity
+                            style={[
+                                styles.button, 
+                                styles.tryAnotherButton,
+                                isSpinning && styles.disabledButton
+                            ]}
+                            onPress={onTryAnother}
+                            disabled={isSpinning}
+                        >
+                            <RNAnimated.View style={{ transform: [{ rotate: spin }] }}>
+                                <Ionicons 
+                                    name="refresh" 
+                                    size={24} 
+                                    color={isSpinning ? COLORS.textLight : COLORS.primary} 
+                                />
+                            </RNAnimated.View>
+                            <Text style={[
+                                styles.tryAnotherButtonText,
+                                isSpinning && styles.disabledButtonText
+                            ]}>Try Another</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                            style={[styles.button, styles.startCookingButton]}
+                            onPress={onStartCooking}
+                        >
+                            <Ionicons name="restaurant" size={24} color={COLORS.white} />
+                            <Text style={styles.startCookingButtonText}>Start Cooking</Text>
+                        </TouchableOpacity>
+                    </View>
                 </View>
-                
-                <View style={styles.buttonContainer}>
-                    <TouchableOpacity
-                        style={[
-                            styles.button, 
-                            styles.tryAnotherButton,
-                            isSpinning && styles.disabledButton
-                        ]}
-                        onPress={onTryAnother}
-                        disabled={isSpinning}
-                    >
-                        <Animated.View style={{ transform: [{ rotate: spin }] }}>
-                            <Ionicons 
-                                name="refresh" 
-                                size={24} 
-                                color={isSpinning ? COLORS.textLight : COLORS.primary} 
-                            />
-                        </Animated.View>
-                        <Text style={[
-                            styles.tryAnotherButtonText,
-                            isSpinning && styles.disabledButtonText
-                        ]}>Try Another</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                        style={[styles.button, styles.startCookingButton]}
-                        onPress={onStartCooking}
-                    >
-                        <Ionicons name="restaurant" size={24} color={COLORS.white} />
-                        <Text style={styles.startCookingButtonText}>Start Cooking</Text>
-                    </TouchableOpacity>
-                </View>
-            </View>
-        </View>
+            </Animated.View>
+        </GestureDetector>
     );
 };
 
@@ -139,28 +178,28 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: COLORS.background,
         width: '100%',
-        paddingTop: Platform.OS === 'ios' ? height * 0.05 : height * 0.03,
+        paddingTop: Platform.OS === 'ios' ? SCREEN_HEIGHT * 0.05 : SCREEN_HEIGHT * 0.03,
     },
     contentContainer: {
         flex: 1,
         alignItems: 'center',
-        paddingHorizontal: width * 0.05,
+        paddingHorizontal: SCREEN_WIDTH * 0.05,
         justifyContent: 'center',
     },
     title: {
-        fontSize: width * 0.07,
+        fontSize: SCREEN_WIDTH * 0.07,
         fontWeight: 'bold',
-        marginBottom: height * 0.04,
+        marginBottom: SCREEN_HEIGHT * 0.04,
         color: COLORS.primaryDark,
         textAlign: 'center',
-        paddingHorizontal: width * 0.05,
+        paddingHorizontal: SCREEN_WIDTH * 0.05,
     },
     imageContainer: {
-        width: width * 0.9,
-        height: height * 0.3,
-        borderRadius: width * 0.04,
+        width: SCREEN_WIDTH * 0.9,
+        height: SCREEN_HEIGHT * 0.3,
+        borderRadius: SCREEN_WIDTH * 0.04,
         overflow: 'hidden',
-        marginBottom: height * 0.05,
+        marginBottom: SCREEN_HEIGHT * 0.05,
         borderWidth: 1,
         borderColor: COLORS.secondaryBg,
     },
@@ -173,16 +212,16 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'center',
         width: '100%',
-        paddingHorizontal: width * 0.05,
-        gap: width * 0.03,
+        paddingHorizontal: SCREEN_WIDTH * 0.05,
+        gap: SCREEN_WIDTH * 0.03,
     },
     button: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        padding: width * 0.04,
-        borderRadius: width * 0.03,
-        minWidth: width * 0.35,
+        padding: SCREEN_WIDTH * 0.04,
+        borderRadius: SCREEN_WIDTH * 0.03,
+        minWidth: SCREEN_WIDTH * 0.35,
     },
     tryAnotherButton: {
         backgroundColor: COLORS.secondaryBg,
@@ -194,15 +233,15 @@ const styles = StyleSheet.create({
     },
     tryAnotherButtonText: {
         color: COLORS.primary,
-        fontSize: width * 0.04,
+        fontSize: SCREEN_WIDTH * 0.04,
         fontWeight: '600',
-        marginLeft: width * 0.02,
+        marginLeft: SCREEN_WIDTH * 0.02,
     },
     startCookingButtonText: {
         color: COLORS.white,
-        fontSize: width * 0.04,
+        fontSize: SCREEN_WIDTH * 0.04,
         fontWeight: '600',
-        marginLeft: width * 0.02,
+        marginLeft: SCREEN_WIDTH * 0.02,
     },
     disabledButton: {
         opacity: 0.7,

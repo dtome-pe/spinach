@@ -605,6 +605,7 @@ export default function App() {
                         onStartSteps={handleStartSteps}
                         onMetricChange={handleMetricPreferenceChange}
                         useMetric={settings.useMetric}
+                        onBack={() => setCurrentState('recipe')}
                     />
                 )}
 
