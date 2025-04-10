@@ -260,7 +260,7 @@ Get Spinach App to start cooking delicious plant-based recipes today!`;
         <GestureDetector gesture={panGesture}>
             <Animated.View style={[appStyles.container, cardStyle]}>
                 <View style={[styles.titleContainer, { paddingTop: Platform.OS === 'ios' ? 60 : 50 }]}>
-                    <Text style={appStyles.recipeTitle}>{recipe.title}</Text>
+                    <Text style={[appStyles.recipeTitle, styles.titleText]}>{recipe.title}</Text>
                 </View>
                 <View style={styles.header}>
                     <View style={styles.servingsContainer}>
@@ -357,8 +357,14 @@ Get Spinach App to start cooking delicious plant-based recipes today!`;
 const styles = StyleSheet.create({
     titleContainer: {
         padding: 20,
+        paddingHorizontal: 60,
         borderBottomWidth: 1,
         borderBottomColor: COLORS.secondaryBg,
+        alignItems: 'center',
+    },
+    titleText: {
+        textAlign: 'center',
+        fontSize: 24,
     },
     header: {
         flexDirection: 'row',

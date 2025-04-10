@@ -130,11 +130,12 @@ export const CookingSteps: React.FC<CookingStepsProps> = ({ steps, onComplete, o
 
     return (
         <View style={styles.container}>
-            {currentStep > 0 && (
-                <View style={styles.upSwipeIndicator}>
-                    <Ionicons name="chevron-up" size={24} color="rgba(22, 101, 52, 0.4)" />
-                </View>
-            )}
+            <View style={[
+                styles.upSwipeIndicator, 
+                { opacity: currentStep > 0 ? 1 : 0 }
+            ]}>
+                <Ionicons name="chevron-up" size={24} color="rgba(22, 101, 52, 0.4)" />
+            </View>
             
             <GestureDetector gesture={panGesture}>
                 <Animated.View style={[styles.stepCard, cardStyle]}>
@@ -175,7 +176,7 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: COLORS.background,
-        paddingTop: Platform.OS === 'ios' ? 50 : 40,
+        paddingTop: Platform.OS === 'ios' ? 35 : 25,
         paddingHorizontal: 20,
     },
     stepCard: {
@@ -260,5 +261,6 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         marginBottom: 10,
+        height: 30, // Fixed height for the indicator area
     },
 }); 
