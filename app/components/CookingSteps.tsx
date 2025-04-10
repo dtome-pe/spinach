@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
     StyleSheet,
     View,
@@ -17,8 +17,9 @@ import Animated, {
     runOnJS,
 } from 'react-native-reanimated';
 import { GestureDetector, Gesture } from 'react-native-gesture-handler';
+import { splitLongSteps } from '../utils/recipeUtils';
 
-const { height: SCREEN_HEIGHT } = Dimensions.get('window');
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 // Define colors here to match the app-wide colors
 const COLORS = {
@@ -44,15 +45,21 @@ interface CookingStepsProps {
 
 export const CookingSteps: React.FC<CookingStepsProps> = ({ steps, onComplete, onBack }) => {
     const [currentStep, setCurrentStep] = useState(0);
+    const [processedSteps, setProcessedSteps] = useState<Step[]>([]);
     const translateY = useSharedValue(0);
     const opacity = useSharedValue(1);
     const scale = useSharedValue(1);
 
+    useEffect(() => {
+        // Process steps on mount
+        setProcessedSteps(splitLongSteps(steps));
+    }, [steps]);
+
     const goToNextStep = useCallback(() => {
-        if (currentStep < steps.length - 1) {
+        if (currentStep < processedSteps.length - 1) {
             setCurrentStep(prev => prev + 1);
         }
-    }, [currentStep, steps.length]);
+    }, [currentStep, processedSteps.length]);
 
     const goToPreviousStep = useCallback(() => {
         if (currentStep > 0) {
@@ -74,7 +81,7 @@ export const CookingSteps: React.FC<CookingStepsProps> = ({ steps, onComplete, o
             translateY.value = event.translationY;
         })
         .onEnd((event) => {
-            if (event.translationY < -50 && currentStep < steps.length - 1) {
+            if (event.translationY < -50 && currentStep < processedSteps.length - 1) {
                 // Swipe up - next step
                 translateY.value = withSequence(
                     withTiming(-20, { duration: 100 }),
@@ -132,13 +139,15 @@ export const CookingSteps: React.FC<CookingStepsProps> = ({ steps, onComplete, o
             <GestureDetector gesture={panGesture}>
                 <Animated.View style={[styles.stepCard, cardStyle]}>
                     <View style={styles.stepNumber}>
-                        <Text style={styles.stepNumberText}>{currentStep + 1}</Text>
+                        <Text style={styles.stepNumberText}>{processedSteps[currentStep]?.number || currentStep + 1}</Text>
                     </View>
-                    <Text style={styles.stepText}>{steps[currentStep].step}</Text>
+                    <View style={styles.textContainer}>
+                        <Text style={styles.stepText}>{processedSteps[currentStep]?.step || ''}</Text>
+                    </View>
                 </Animated.View>
             </GestureDetector>
 
-            {currentStep === steps.length - 1 && (
+            {currentStep === processedSteps.length - 1 && (
                 <TouchableOpacity
                     style={styles.completeButton}
                     onPress={handleComplete}
@@ -147,7 +156,7 @@ export const CookingSteps: React.FC<CookingStepsProps> = ({ steps, onComplete, o
                 </TouchableOpacity>
             )}
 
-            {currentStep < steps.length - 1 && (
+            {currentStep < processedSteps.length - 1 && (
                 <View style={styles.swipeIndicator}>
                     <Ionicons name="chevron-down" size={24} color="rgba(22, 101, 52, 0.4)" />
                     {currentStep === 0 && (
@@ -167,10 +176,12 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: COLORS.background,
         paddingTop: Platform.OS === 'ios' ? 50 : 40,
+        paddingHorizontal: 20,
     },
     stepCard: {
         height: SCREEN_HEIGHT * 0.65,
-        margin: 20,
+        marginHorizontal: 20,
+        marginVertical: 20,
         padding: 20,
         backgroundColor: COLORS.white,
         borderRadius: 20,
@@ -184,6 +195,8 @@ const styles = StyleSheet.create({
         elevation: 5,
         justifyContent: 'flex-start',
         alignItems: 'flex-start',
+        width: SCREEN_WIDTH - 80,
+        alignSelf: 'center',
     },
     stepNumber: {
         width: 40,
@@ -199,11 +212,16 @@ const styles = StyleSheet.create({
         fontSize: 20,
         fontWeight: 'bold',
     },
+    textContainer: {
+        width: '100%',
+        flexDirection: 'row',
+    },
     stepText: {
         fontSize: 22,
         textAlign: 'left',
         lineHeight: 32,
         color: COLORS.textLight,
+        flexShrink: 1,
     },
     completeButton: {
         backgroundColor: COLORS.primary,
