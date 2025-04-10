@@ -69,7 +69,23 @@ export const getCachedRecipe = async (id: number): Promise<Recipe | null> => {
   try {
     const cachedData = await AsyncStorage.getItem(`${KEYS.RECIPE_CACHE}${id}`);
     if (cachedData) {
-      const { recipe, timestamp }: CachedRecipe = JSON.parse(cachedData);
+      const parsedData = JSON.parse(cachedData);
+      
+      // Validate the parsed data structure
+      if (!parsedData || typeof parsedData !== 'object') {
+        console.error('Invalid cached data format');
+        await AsyncStorage.removeItem(`${KEYS.RECIPE_CACHE}${id}`);
+        return null;
+      }
+      
+      const { recipe, timestamp } = parsedData;
+      
+      // Validate timestamp is a valid number
+      if (!timestamp || typeof timestamp !== 'number' || isNaN(timestamp)) {
+        console.error('Invalid timestamp in cached data');
+        await AsyncStorage.removeItem(`${KEYS.RECIPE_CACHE}${id}`);
+        return null;
+      }
       
       // Check if cache is expired (1 hour)
       const now = Date.now();
@@ -79,9 +95,13 @@ export const getCachedRecipe = async (id: number): Promise<Recipe | null> => {
       
       // Log cache access information only in development
       if (__DEV__) {
-        console.log(`[Recipe Cache] Accessing recipe ${id} at ${new Date(now).toISOString()}`);
-        console.log(`[Recipe Cache] Recipe was cached at ${new Date(timestamp).toISOString()}`);
-        console.log(`[Recipe Cache] Time left in cache: ${Math.floor(timeLeftInMs / 1000 / 60)} minutes and ${Math.floor((timeLeftInMs / 1000) % 60)} seconds`);
+        try {
+          console.log(`[Recipe Cache] Accessing recipe ${id} at ${new Date(now).toISOString()}`);
+          console.log(`[Recipe Cache] Recipe was cached at ${new Date(timestamp).toISOString()}`);
+          console.log(`[Recipe Cache] Time left in cache: ${Math.floor(timeLeftInMs / 1000 / 60)} minutes and ${Math.floor((timeLeftInMs / 1000) % 60)} seconds`);
+        } catch (dateError) {
+          console.error('Error formatting dates:', dateError);
+        }
       }
       
       if (timeLeftInMs > 0) {

@@ -515,7 +515,8 @@ export default function App() {
                         
                         {/* Tagline */}
                         <Animated.Text style={[styles.tagline, { opacity: contentOpacity, marginBottom: SCREEN_HEIGHT * 0.04 }]}>
-                            Find <Text style={styles.taglineHighlight}>delicious</Text> recipes based on <Text style={styles.taglineHighlight}>what's fresh</Text> today
+                            Find <Text style={styles.taglineHighlight}>delicious</Text> vegan recipes for{'\n'}
+                            <Text style={styles.taglineHighlight}>every day</Text> meals
                         </Animated.Text>
 
                         {/* Spin Button */}
@@ -571,7 +572,7 @@ export default function App() {
                             transform: [{ translateY: contentTranslateY }],
                         }}>
                             <Text style={styles.footerText}>
-                                Eco-friendly • Organic • 100% Plant-based
+                                Simple • Inspiring • 100% Vegan
                             </Text>
                         </Animated.View>
                     </>
