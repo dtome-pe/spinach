@@ -85,12 +85,6 @@ export const History: React.FC<HistoryProps> = ({ visible, onClose, onSelectReci
                                     />
                                     <View style={styles.recipeInfo}>
                                         <Text style={styles.recipeTitle}>{recipe.title}</Text>
-                                        <View style={styles.recipeMeta}>
-                                            <View style={styles.metaItem}>
-                                                <Ionicons name="time-outline" size={16} color="#16a34a" />
-                                                <Text style={styles.metaText}>{recipe.readyInMinutes} min</Text>
-                                            </View>
-                                        </View>
                                     </View>
                                 </TouchableOpacity>
                             ))
@@ -160,19 +154,6 @@ const styles = StyleSheet.create({
         fontWeight: '600',
         color: '#166534',
         marginBottom: 4,
-    },
-    recipeMeta: {
-        flexDirection: 'row',
-        alignItems: 'center',
-    },
-    metaItem: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 4,
-    },
-    metaText: {
-        fontSize: 12,
-        color: '#16a34a',
     },
     emptyState: {
         flex: 1,
