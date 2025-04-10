@@ -29,8 +29,8 @@ import { testApiConnection } from './utils/apiTest';
 import { cacheRecipe, getCachedRecipe, getRecentRecipeIds, clearRecipeCache } from './utils/cacheUtils';
 import { TEST_MODE } from '@env';
 
-// Get screen dimensions
-const { width, height } = Dimensions.get('window');
+// Get screen dimensions at the top level
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 type AppState = 'landing' | 'recipe' | 'ingredients' | 'cooking';
 
@@ -446,9 +446,9 @@ export default function App() {
                     flexDirection: 'row', 
                     justifyContent: 'space-between', 
                     width: '100%', 
-                    paddingHorizontal: width * 0.05,
+                    paddingHorizontal: SCREEN_WIDTH * 0.05,
                     position: 'absolute',
-                    top: Platform.OS === 'ios' ? height * 0.05 : height * 0.03
+                    top: Platform.OS === 'ios' ? SCREEN_HEIGHT * 0.05 : SCREEN_HEIGHT * 0.03
                 }}>
 
                     {/* History Button */}
@@ -474,9 +474,9 @@ export default function App() {
                     flexDirection: 'row', 
                     justifyContent: 'space-between', 
                     width: '100%', 
-                    paddingHorizontal: width * 0.05,
+                    paddingHorizontal: SCREEN_WIDTH * 0.05,
                     position: 'absolute',
-                    top: Platform.OS === 'ios' ? height * 0.05 : height * 0.03
+                    top: Platform.OS === 'ios' ? SCREEN_HEIGHT * 0.05 : SCREEN_HEIGHT * 0.03
                 }}>
                     {/* Home Button */}
                     <TouchableOpacity
@@ -507,14 +507,14 @@ export default function App() {
                 {/* Landing page content */}
                 {currentState === 'landing' && (
                     <>
-                        <View style={[styles.logoContainer, { marginTop: height * 0.03 }]}>
+                        <View style={[styles.logoContainer, { marginTop: SCREEN_HEIGHT * 0.03 }]}>
                             <View style={styles.logoRow}>
                                 <SpinachLogo size="large" />
                             </View>
                         </View>
                         
                         {/* Tagline */}
-                        <Animated.Text style={[styles.tagline, { opacity: contentOpacity, marginBottom: height * 0.04 }]}>
+                        <Animated.Text style={[styles.tagline, { opacity: contentOpacity, marginBottom: SCREEN_HEIGHT * 0.04 }]}>
                             Find <Text style={styles.taglineHighlight}>delicious</Text> recipes based on <Text style={styles.taglineHighlight}>what's fresh</Text> today
                         </Animated.Text>
 

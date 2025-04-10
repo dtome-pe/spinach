@@ -14,8 +14,9 @@ import { styles as appStyles } from '../styles';
 import { getRecentRecipeIds, getCachedRecipe } from '../utils/cacheUtils';
 import { Recipe } from '../utils/recipeUtils';
 
-const { width } = Dimensions.get('window');
-const CARD_WIDTH = width * 0.8;
+// Get screen dimensions at the top level
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const CARD_WIDTH = SCREEN_WIDTH * 0.8;
 const CARD_HEIGHT = CARD_WIDTH * 0.6;
 
 interface HistoryProps {
@@ -95,6 +96,8 @@ export const History: React.FC<HistoryProps> = ({ visible, onClose, onSelectReci
         </Modal>
     );
 };
+
+export default History;
 
 const styles = StyleSheet.create({
     modalContainer: {

@@ -21,12 +21,13 @@ import Animated, {
     runOnJS,
 } from 'react-native-reanimated';
 
+// Get screen dimensions at the top level
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 const SWIPE_THRESHOLD = SCREEN_WIDTH * 0.25;
 
 // Set image height to be at most 1/3 of the screen height with padding
-const IMAGE_HEIGHT = Math.min(width * 0.6, height * 0.3);
-const IMAGE_WIDTH = width - 40; // Adding padding of 20 on each side
+const IMAGE_HEIGHT = Math.min(SCREEN_WIDTH * 0.6, SCREEN_HEIGHT * 0.3);
+const IMAGE_WIDTH = SCREEN_WIDTH - 40; // Adding padding of 20 on each side
 
 // Define colors here to match the app-wide colors
 const COLORS = {
