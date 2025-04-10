@@ -178,6 +178,125 @@ export const decimalToFraction = (decimal: number): string => {
     return rounded.toFixed(1);
 };
 
+export const splitLongSteps = (steps: { number: number; step: string }[]) => {
+    const MAX_CHARS = 200;
+    const MIN_CHARS = 50;
+    let result: { number: number; step: string }[] = [];
+    
+    // Helper function to properly join step texts with correct punctuation
+    const joinSteps = (first: string, second: string): string => {
+        first = first.trim();
+        second = second.trim();
+        
+        // Check if the first step ends with a punctuation mark
+        const endsWithPunctuation = /[.!?]$/.test(first);
+        
+        if (endsWithPunctuation) {
+            // If it already ends with punctuation, just add a space
+            return first + ' ' + second;
+        } else {
+            // If it doesn't end with punctuation, add a period and a space
+            return first + '. ' + second;
+        }
+    };
+    
+    for (const step of steps) {
+        if (step.step.length <= MAX_CHARS) {
+            result.push(step);
+            continue;
+        }
+
+        // Split the step into sentences
+        const sentences = step.step.match(/[^.!?]+[.!?]+/g) || [step.step];
+        let currentStep = '';
+        let currentNumber = step.number;
+
+        for (const sentence of sentences) {
+            // If adding this sentence doesn't exceed MAX_CHARS, add it to current step
+            if (currentStep.length + sentence.length <= MAX_CHARS) {
+                currentStep += sentence;
+            } else {
+                // Check if current step is too short to stand alone
+                if (currentStep.length < MIN_CHARS && result.length > 0) {
+                    // Merge with previous step if possible
+                    const prevStep = result[result.length - 1];
+                    if (prevStep.step.length + currentStep.length <= MAX_CHARS) {
+                        prevStep.step = joinSteps(prevStep.step, currentStep);
+                        currentStep = '';
+                    }
+                }
+
+                // If we have content, add it as a step
+                if (currentStep) {
+                    result.push({
+                        number: currentNumber,
+                        step: currentStep.trim()
+                    });
+                    currentNumber++;
+                }
+                // Start new step with current sentence
+                currentStep = sentence;
+            }
+        }
+
+        // Add the last step if there's content
+        if (currentStep) {
+            // Check if last step is too short
+            if (currentStep.length < MIN_CHARS && result.length > 0) {
+                // Try to merge with the previous step
+                const prevStep = result[result.length - 1];
+                if (prevStep.step.length + currentStep.length <= MAX_CHARS) {
+                    prevStep.step = joinSteps(prevStep.step, currentStep);
+                } else {
+                    result.push({
+                        number: currentNumber,
+                        step: currentStep.trim()
+                    });
+                }
+            } else {
+                result.push({
+                    number: currentNumber,
+                    step: currentStep.trim()
+                });
+            }
+        }
+    }
+    
+    // Final pass to merge very short steps with next step (forward pass)
+    for (let i = 0; i < result.length - 1; i++) {
+        if (result[i].step.length < MIN_CHARS) {
+            // Try to merge with next step
+            if (result[i].step.length + result[i+1].step.length <= MAX_CHARS) {
+                result[i+1].step = joinSteps(result[i].step, result[i+1].step);
+                result.splice(i, 1); // Remove the current step
+                i--; // Adjust index after removal
+            }
+        }
+    }
+    
+    // For short last step, try to merge with previous step (backward pass)
+    if (result.length > 1) {
+        const lastIndex = result.length - 1;
+        const lastStep = result[lastIndex];
+        
+        if (lastStep.step.length < MIN_CHARS) {
+            const prevStep = result[lastIndex - 1];
+            if (prevStep.step.length + lastStep.step.length <= MAX_CHARS) {
+                prevStep.step = joinSteps(prevStep.step, lastStep.step);
+                result.pop(); // Remove the last step
+            }
+        }
+    }
+    
+    // Fix step numbering to be consecutive
+    result = result.map((step, index) => ({
+        ...step,
+        number: index + 1
+    }));
+
+    return result;
+};
+
 // Add a default export
 export default {
   processRecipeData,
