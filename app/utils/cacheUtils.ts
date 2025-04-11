@@ -4,6 +4,7 @@ import { Recipe } from './recipeUtils';
 // Keys for AsyncStorage
 const KEYS = {
   RECIPE_CACHE: 'RECIPE_CACHE_',
+  HISTORY_CACHE: 'HISTORY_CACHE_',
   RECENT_RECIPES: 'RECENT_RECIPES',
   MAX_CACHE_SIZE: 10, // Maximum number of recipes to cache
 };
@@ -11,6 +12,12 @@ const KEYS = {
 interface CachedRecipe {
   recipe: Recipe;
   timestamp: number;
+}
+
+interface HistoryRecipe {
+  id: number;
+  title: string;
+  image: string;
 }
 
 /**
@@ -32,6 +39,18 @@ export const cacheRecipe = async (recipe: Recipe): Promise<void> => {
       JSON.stringify(cachedRecipe)
     );
     
+    // Cache minimal recipe data for history (never expires)
+    const historyRecipe: HistoryRecipe = {
+      id: recipe.id,
+      title: recipe.title,
+      image: recipe.image
+    };
+    
+    await AsyncStorage.setItem(
+      `${KEYS.HISTORY_CACHE}${recipe.id}`,
+      JSON.stringify(historyRecipe)
+    );
+    
     // Update the recent recipes list
     const recentRecipesJson = await AsyncStorage.getItem(KEYS.RECENT_RECIPES);
     let recentRecipes: number[] = recentRecipesJson ? JSON.parse(recentRecipesJson) : [];
@@ -47,6 +66,7 @@ export const cacheRecipe = async (recipe: Recipe): Promise<void> => {
       // Clean up removed recipes from cache
       for (const id of removedIds) {
         await AsyncStorage.removeItem(`${KEYS.RECIPE_CACHE}${id}`);
+        await AsyncStorage.removeItem(`${KEYS.HISTORY_CACHE}${id}`);
       }
     }
     
@@ -87,9 +107,10 @@ export const getCachedRecipe = async (id: number): Promise<Recipe | null> => {
         return null;
       }
       
-      // Check if cache is expired (1 hour)
+      // Check if cache is expired (1 minute for testing)
       const now = Date.now();
-      const oneHourInMs = 60 * 60 * 1000;
+      const oneHourInMs = 60 * 60 * 1000; // 1 hour
+      // const oneHourInMs = 60 * 1000; // 1 minute for testing
       const timeElapsed = now - timestamp;
       const timeLeftInMs = oneHourInMs - timeElapsed;
       
@@ -138,6 +159,21 @@ export const getRecentRecipeIds = async (): Promise<number[]> => {
 };
 
 /**
+ * Get history recipe data (minimal data that doesn't expire)
+ * @param id Recipe ID
+ * @returns Basic recipe info for history display or null if not found
+ */
+export const getHistoryRecipe = async (id: number): Promise<{ id: number, title: string, image: string } | null> => {
+  try {
+    const historyData = await AsyncStorage.getItem(`${KEYS.HISTORY_CACHE}${id}`);
+    return historyData ? JSON.parse(historyData) : null;
+  } catch (error) {
+    console.error('Error retrieving history recipe:', error);
+    return null;
+  }
+};
+
+/**
  * Clear all cached recipes
  */
 export const clearRecipeCache = async (): Promise<void> => {
@@ -147,12 +183,30 @@ export const clearRecipeCache = async (): Promise<void> => {
     // Remove all cached recipes
     for (const id of recentIds) {
       await AsyncStorage.removeItem(`${KEYS.RECIPE_CACHE}${id}`);
+      // Don't remove history cache when clearing recipe cache
+    }
+  } catch (error) {
+    console.error('Error clearing recipe cache:', error);
+  }
+};
+
+/**
+ * Clear all history and recipe cache
+ */
+export const clearAllCache = async (): Promise<void> => {
+  try {
+    const recentIds = await getRecentRecipeIds();
+    
+    // Remove all cached recipes and history
+    for (const id of recentIds) {
+      await AsyncStorage.removeItem(`${KEYS.RECIPE_CACHE}${id}`);
+      await AsyncStorage.removeItem(`${KEYS.HISTORY_CACHE}${id}`);
     }
     
     // Clear recent list
     await AsyncStorage.removeItem(KEYS.RECENT_RECIPES);
   } catch (error) {
-    console.error('Error clearing recipe cache:', error);
+    console.error('Error clearing all cache:', error);
   }
 };
 
@@ -160,5 +214,7 @@ export default {
   cacheRecipe,
   getCachedRecipe,
   getRecentRecipeIds,
+  getHistoryRecipe,
   clearRecipeCache,
+  clearAllCache,
 }; 

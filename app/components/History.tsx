@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { styles as appStyles } from '../styles';
-import { getRecentRecipeIds, getCachedRecipe } from '../utils/cacheUtils';
+import { getRecentRecipeIds, getHistoryRecipe } from '../utils/cacheUtils';
 import { Recipe } from '../utils/recipeUtils';
 
 // Get screen dimensions at the top level
@@ -37,8 +37,28 @@ export const History: React.FC<HistoryProps> = ({ visible, onClose, onSelectReci
     const loadHistory = async () => {
         try {
             const recentIds = await getRecentRecipeIds();
-            const recipePromises = recentIds.map(id => getCachedRecipe(id));
-            const loadedRecipes = await Promise.all(recipePromises);
+            
+            // Use getHistoryRecipe instead of getCachedRecipe to get minimal recipes that don't expire
+            const recipesPromises = recentIds.map(async (id) => {
+                const historyRecipe = await getHistoryRecipe(id);
+                if (!historyRecipe) return null;
+                
+                // Convert the history recipe to a minimal Recipe type
+                return {
+                    id: historyRecipe.id,
+                    title: historyRecipe.title,
+                    image: historyRecipe.image,
+                    // Add empty fields to satisfy Recipe type
+                    summary: '',
+                    description: '',
+                    readyInMinutes: 0,
+                    servings: 0,
+                    extendedIngredients: [],
+                    analyzedInstructions: [{ steps: [] }]
+                } as Recipe;
+            });
+            
+            const loadedRecipes = await Promise.all(recipesPromises);
             const validRecipes = loadedRecipes.filter(recipe => recipe !== null) as Recipe[];
             setRecipes(validRecipes);
         } catch (error) {

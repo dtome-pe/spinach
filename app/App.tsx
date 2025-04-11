@@ -26,7 +26,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Recipe, processRecipeData, adjustServings } from './utils/recipeUtils';
 import { API_CONFIG } from './config';
 import { testApiConnection } from './utils/apiTest';
-import { cacheRecipe, getCachedRecipe, getRecentRecipeIds, clearRecipeCache } from './utils/cacheUtils';
+import { cacheRecipe, getCachedRecipe, getRecentRecipeIds, getHistoryRecipe, clearRecipeCache, clearAllCache } from './utils/cacheUtils';
 import { TEST_MODE } from '@env';
 
 // Get screen dimensions at the top level
@@ -90,6 +90,44 @@ export default function App() {
         });
         return () => backHandler.remove();
     }, [currentState]);
+
+    // Development test functions
+    useEffect(() => {
+        if (__DEV__) {
+            // For testing purposes only in dev environment
+            const testCache = async () => {
+                try {
+                    // Get all recipe IDs
+                    const recipeIds = await getRecentRecipeIds();
+                    
+                    if (recipeIds.length > 0) {
+                        const testId = recipeIds[0];
+                        console.log('\n=== CACHE TEST ===');
+                        console.log(`Testing cache for recipe ID: ${testId}`);
+                        
+                        // Check if recipe is in recipe cache
+                        const cachedRecipe = await getCachedRecipe(testId);
+                        console.log(`Recipe in detail cache: ${!!cachedRecipe}`);
+                        
+                        // Check if recipe is in history cache
+                        const historyRecipe = await getHistoryRecipe(testId);
+                        console.log(`Recipe in history cache: ${!!historyRecipe}`);
+                        
+                        if (historyRecipe) {
+                            console.log(`History cache contains: ${historyRecipe.title}`);
+                        }
+                        
+                        console.log('=== END CACHE TEST ===\n');
+                    }
+                } catch (error) {
+                    console.error('Error in test cache:', error);
+                }
+            };
+
+            // Uncomment to run test
+            // testCache();
+        }
+    }, []);
 
     const loadSettings = async () => {
         try {
