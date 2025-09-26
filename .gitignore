@@ -44,3 +44,4 @@ android/
 ios/
 app/env.d.ts
 server/.serverless
+android.backup
