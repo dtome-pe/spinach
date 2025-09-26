@@ -1,3 +1,13 @@
+# Build artifacts
+build/
+
+# Fastlane outputs
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots/
+
+# Secrets (do not commit API keys)
+fastlane/ASC_API_Key.json
 # Learn more https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files
 
 # dependencies
