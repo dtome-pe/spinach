@@ -14,3 +14,15 @@ android_apk:
 	cd android && ./gradlew assembleRelease
 
 .PHONY: android_aab android_apk publish_android
+
+ios-build:
+	@bundle install
+	@bundle exec fastlane ios build
+
+ios-upload:
+	@bundle install
+	@bundle exec fastlane ios upload
+
+ios-release:
+	@bundle install
+	@bundle exec fastlane ios release

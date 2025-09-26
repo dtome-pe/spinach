@@ -43,7 +43,10 @@
       }
     },
     "plugins": [
-      "expo-router"
+      "expo-router",
+      "expo-font",
+      "expo-sqlite",
+      "expo-web-browser"
     ],
     "owner": "tonelo"
   }

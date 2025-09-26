@@ -1,0 +1,54 @@
+default_platform(:ios)
+
+platform :ios do
+  desc "Install CocoaPods"
+  lane :pods do
+    cocoapods(
+      clean_install: true,
+      repo_update: true,
+      podfile: "ios/Podfile"
+    )
+  end
+
+  desc "Build App Store IPA"
+  lane :build do
+    pods
+    build_ios_app(
+      workspace: "ios/spinach.xcworkspace",
+      scheme: "spinach",
+      export_method: "app-store",
+      output_directory: "build",
+      clean: true,
+      include_bitcode: false,
+      xcargs: "-allowProvisioningUpdates -destination 'generic/platform=iOS'"
+    )
+  end
+
+  desc "Upload latest IPA to App Store Connect (TestFlight)"
+  lane :upload do
+    api_key = app_store_connect_api_key(
+      key_id: "QK27HGLJWW",
+      issuer_id: "ea4a7235-f2f8-4500-8004-0e55ddf181dc",
+      key_file: "/Users/jmarinel/Documents/Dev/AuthKey_QK27HGLJWW.p8"
+    )
+
+    ipa_path = Dir[File.join("build", "*.ipa")].max_by { |f| File.mtime(f) }
+    UI.user_error!("IPA not found in build/. Run lane :build first.") unless ipa_path
+
+    deliver(
+      ipa: ipa_path,
+      api_key: api_key,
+      submit_for_review: false,
+      skip_metadata: true,
+      skip_screenshots: true
+    )
+  end
+
+  desc "Build then upload"
+  lane :release do
+    build
+    upload
+  end
+end
+
+
